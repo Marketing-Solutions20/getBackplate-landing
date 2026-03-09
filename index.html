@@ -1013,7 +1013,8 @@
   .values-grid { grid-template-columns: repeat(2, 1fr); }
 
   /* Footer */
-  .footer-inner { grid-template-columns: 1fr 1fr; gap: 40px; }
+  footer { padding: 48px 40px; gap: 32px; }
+  .footer-right { text-align: right; }
 }
 
 /* ══════════════════════════════════════
@@ -1093,9 +1094,15 @@
   .values-grid { grid-template-columns: 1fr; }
 
   /* Footer */
-  footer { padding: 40px 20px; }
-  .footer-inner { grid-template-columns: 1fr; gap: 40px; }
+  footer {
+    padding: 40px 20px;
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 28px;
+  }
+  .footer-logo { display: flex; justify-content: center; }
   .footer-logo-img { height: 22px; }
+  .footer-right { text-align: center; font-size: 11px; }
 
   /* First Table */
   .ft-counter { padding: 28px 20px; }
@@ -1122,6 +1129,8 @@
 ══════════════════════════════════════ */
 @media (max-width: 390px) {
   .hero h1 { font-size: 30px; }
+  footer { padding: 32px 16px; gap: 20px; }
+  .footer-tagline { font-size: 13px; }
   .hero-badge { font-size: 10px; }
   .hero-mod-name { font-size: 15px; }
   .price-card { padding: 24px 16px; }
