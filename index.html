@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GetBackplate — Run Your Restaurant. Not Just Your Register.</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMTYgMjE2Ij48cGF0aCBkPSJNMTYzLjIzLDI1LjA1aDI5Ljc3djE2NS45aC0yOS43N3YtMy4zMWgxNC4xVjI4LjM2aC0xNC4xdi0zLjMxWiIgc3R5bGU9ImZpbGw6I2Q0NTMxYTsiLz48cGF0aCBkPSJNNTIuNzcsMTkwLjk1aC0yOS43N1YyNS4wNWgyOS43N3YzLjMxaC0xNC4xdjE1OS4yOGgxNC4xdjMuMzFaIiBzdHlsZT0iZmlsbDojMGYxOTIzOyIvPjwvc3ZnPg==">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:        #0F1923;
+    --navy-mid:    #162230;
+    --cream:       #FAF7F2;
+    --cream-soft:  #F0EDE8;
+    --orange:      #D4531A;
+    --orange-light:#E06030;
+    --gold:        #F0B060;
+    --gold-soft:   #E8A84A;
+    --gold-pale:   #FDF0D8;
+    --muted-dark:  rgba(250,247,242,0.52);
+    --muted-light: rgba(15,25,35,0.5);
+    --border-dark: rgba(255,255,255,0.07);
+    --border-light:rgba(15,25,35,0.09);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    background: var(--navy);
+  }
+
+  /* Grain texture */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: 0.45;
+  }
+
+
+  /* ── Logo image ── */
+  .logo-img-link { display: flex; align-items: center; text-decoration: none; }
+  .logo-img {
+    height: clamp(24px, 3vw, 32px);
+    width: auto;
+    display: block;
+    max-width: 220px;
+    /* PNG has dark bg — blend out on navy nav */
+
+  }
+  .footer-logo { display: flex; align-items: center; }
+  .footer-logo-img {
+    height: 28px;
+    width: auto;
+    display: block;
+
+  }
+
+  /* ── Theme helpers ── */
+  .dark  { background: var(--navy);  color: var(--cream); }
+  .light { background: var(--cream); color: var(--navy);  }
+  .light-warm { background: var(--cream-soft); color: var(--navy); }
+
+  /* ── Section label ── */
+  .label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .label::before { content: ''; display: block; width: 24px; height: 1px; }
+  .dark  .label { color: var(--gold); }
+  .dark  .label::before { background: var(--gold); }
+  .light .label, .light-warm .label { color: var(--orange); }
+  .light .label::before, .light-warm .label::before { background: var(--orange); }
+  .label.center { justify-content: center; }
+  .label.center::before { display: none; }
+
+  /* ── Scroll reveals ── */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.72s ease, transform 0.72s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-left { opacity: 0; transform: translateX(-28px); transition: opacity 0.72s ease, transform 0.72s ease; }
+  .reveal-left.visible { opacity: 1; transform: translateX(0); }
+
+  /* ══════════════════════════════════════
+     NAV
+  ══════════════════════════════════════ */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+    height: 68px;
+    padding: 0 64px;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background 0.3s, backdrop-filter 0.3s;
+  }
+  nav.scrolled {
+    background: rgba(15,25,35,0.97);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-dark);
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 21px; font-weight: 600;
+    color: var(--cream); text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .logo em { font-style: normal; color: var(--orange); }
+  .nav-right { display: flex; align-items: center; gap: 36px; }
+  .nav-link {
+    font-size: 12px; letter-spacing: 0.05em;
+    color: var(--muted-dark); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-link:hover { color: var(--cream); }
+  .nav-cta {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--cream); text-decoration: none;
+    background: var(--orange);
+    padding: 11px 26px;
+    transition: background 0.22s;
+  }
+  .nav-cta:hover { background: var(--orange-light); }
+
+  /* ══════════════════════════════════════
+     HERO — DARK
+  ══════════════════════════════════════ */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 420px; /* collapses at 1024px */
+    align-items: center;
+    padding: 120px 64px 100px;
+    position: relative;
+    overflow: hidden;
+    background: var(--navy);
+    gap: 80px;
+  }
+  .hero-glow {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 65% at 65% 50%, rgba(212,83,26,0.11) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 10% 80%, rgba(240,176,96,0.06) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .hero-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    right: calc(420px + 64px + 40px);
+    width: 1px;
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(240,176,96,0.15) 20%,
+      rgba(240,176,96,0.15) 80%,
+      transparent 100%);
+  }
+  .hero-left { position: relative; z-index: 1; }
+  .hero-eyebrow {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 32px;
+    display: flex; align-items: center; gap: 14px;
+    opacity: 0; animation: riseUp 0.65s ease 0.1s both;
+  }
+  .hero-eyebrow::before {
+    content: ''; display: block;
+    width: 32px; height: 1px; background: var(--gold);
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(56px, 7.5vw, 110px);
+    font-weight: 300; line-height: 0.92;
+    letter-spacing: -0.03em;
+    color: var(--cream);
+    opacity: 0; animation: riseUp 0.65s ease 0.25s both;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero h1 .acc { color: var(--orange); }
+  .hero-sub {
+    margin-top: 36px; max-width: min(440px, 100%);
+    font-size: 16px; line-height: 1.75;
+    color: var(--muted-dark);
+    opacity: 0; animation: riseUp 0.65s ease 0.4s both;
+  }
+  .hero-actions {
+    margin-top: 48px;
+    display: flex; align-items: center; gap: 24px;
+    opacity: 0; animation: riseUp 0.65s ease 0.55s both;
+  }
+  .btn-primary {
+    display: inline-block;
+    background: var(--orange); color: #fff;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.13em; text-transform: uppercase;
+    text-decoration: none; padding: 15px 34px;
+    transition: background 0.22s, transform 0.15s;
+  }
+  .btn-primary:hover { background: var(--orange-light); transform: translateY(-1px); }
+  .btn-ghost {
+    font-size: 12px; color: var(--muted-dark); text-decoration: none;
+    letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 8px;
+    transition: color 0.2s;
+  }
+  .btn-ghost:hover { color: var(--cream); }
+  .btn-ghost::after { content: '↓'; font-size: 14px; }
+
+  /* Hero card */
+  .hero-right {
+    position: relative; z-index: 1;
+    opacity: 0; animation: riseUp 0.65s ease 0.5s both;
+  }
+  .hero-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-dark);
+    padding: 40px;
+  }
+  .hero-card-tag {
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--orange); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hero-card-tag::before { content: ''; display: block; width: 18px; height: 1px; background: var(--orange); }
+  .hero-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 300; line-height: 1.25;
+    color: var(--cream); margin-bottom: 24px;
+  }
+  .hero-card h3 em { font-style: italic; color: var(--gold); }
+  .card-perks { display: flex; flex-direction: column; gap: 16px; }
+  .card-perk {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-dark);
+  }
+  .card-perk:last-child { border-bottom: none; padding-bottom: 0; }
+  .perk-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--orange); margin-top: 6px; flex-shrink: 0;
+  }
+  .perk-title { font-size: 13px; font-weight: 500; color: var(--cream); margin-bottom: 3px; }
+  .perk-desc { font-size: 12px; color: var(--muted-dark); line-height: 1.55; }
+
+  /* Scroll indicator */
+  .scroll-hint {
+    position: absolute; bottom: 44px; left: 64px;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(250,247,242,0.25);
+    display: flex; align-items: center; gap: 12px;
+    opacity: 0; animation: riseUp 0.65s ease 0.8s both;
+  }
+  .scroll-hint::before {
+    content: '';
+    display: block; width: 1px; height: 36px;
+    background: linear-gradient(to bottom, rgba(250,247,242,0.25), transparent);
+  }
+
+  /* ══════════════════════════════════════
+     REALITY CHECK — LIGHT
+  ══════════════════════════════════════ */
+  .reality {
+    padding: 120px 64px;
+    background: var(--cream);
+  }
+  .reality-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: center;
+  }
+  .reality h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(38px, 4.5vw, 60px);
+    font-weight: 300; line-height: 1.05;
+    letter-spacing: -0.02em; color: var(--navy);
+  }
+  .reality h2 em { font-style: italic; color: var(--orange); }
+  .reality-right { padding-top: 8px; }
+  .reality-right p {
+    font-size: 16px; line-height: 1.8;
+    color: var(--muted-light); margin-bottom: 24px;
+  }
+  .reality-right p:last-child { margin-bottom: 0; }
+  .reality-intro {
+    font-size: 15px; line-height: 1.7;
+    color: var(--navy); margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .reality-intro strong { color: var(--orange); }
+  .reality-list {
+    list-style: none; margin-top: 32px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .reality-list li {
+    font-size: 14px; color: var(--navy);
+    padding: 16px 0;
+    border-top: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .reality-list li:last-child { border-bottom: 1px solid var(--border-light); }
+  .reality-list li::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--orange); flex-shrink: 0;
+  }
+
+  /* ══════════════════════════════════════
+     WHAT IS IT — DARK
+  ══════════════════════════════════════ */
+  .what-is {
+    padding: 120px 64px;
+    background: var(--navy);
+    position: relative; overflow: hidden;
+  }
+  .what-is-glow {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 70% at 80% 50%, rgba(212,83,26,0.07) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .what-is-inner {
+    max-width: 1280px; margin: 0 auto;
+  }
+  .what-is h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(40px, 5vw, 72px);
+    font-weight: 300; line-height: 1.0;
+    letter-spacing: -0.025em; color: var(--cream);
+    max-width: min(780px, 100%); margin-bottom: 80px;
+  }
+  .what-is h2 em { font-style: italic; color: var(--gold); }
+  .what-is h2 strong { font-weight: 600; color: var(--orange); }
+  .what-is-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border-dark);
+  }
+  .what-card {
+    background: var(--navy);
+    padding: 48px 40px;
+  }
+  .what-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px; font-weight: 300;
+    color: rgba(240,176,96,0.18);
+    line-height: 1; margin-bottom: 24px;
+    letter-spacing: -0.03em;
+  }
+  .what-title {
+    font-size: 15px; font-weight: 500;
+    color: var(--cream); margin-bottom: 12px;
+    letter-spacing: 0.01em;
+  }
+  .what-body {
+    font-size: 13px; line-height: 1.7;
+    color: var(--muted-dark);
+  }
+
+  .what-card-multi {
+    border: 1px solid rgba(212,83,26,0.3);
+    background: rgba(212,83,26,0.06);
+    grid-column: span 1;
+  }
+  .what-card-multi .what-num { color: rgba(212,83,26,0.4); }
+  .what-card-multi .what-title { color: var(--cream); }
+  .what-card-tag {
+    margin-top: auto;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--orange);
+    padding-top: 16px;
+    border-top: 1px solid rgba(212,83,26,0.2);
+  }
+
+  /* ══════════════════════════════════════
+     MULTI-LOCATION BANNER — CREAM
+  ══════════════════════════════════════ */
+  .multiloc-banner {
+    background: var(--cream);
+    padding: 100px 64px;
+  }
+  .multiloc-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 80px; align-items: center;
+  }
+  .multiloc-left .label { color: var(--orange); }
+  .multiloc-left h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(40px, 4.5vw, 64px);
+    font-weight: 300; line-height: 1.05;
+    letter-spacing: -0.025em; color: var(--navy);
+    margin-top: 20px; margin-bottom: 0;
+  }
+  .multiloc-left h2 em { font-style: italic; color: var(--orange); }
+  .multiloc-right p {
+    font-size: 15px; line-height: 1.85;
+    color: var(--muted); margin-bottom: 48px;
+  }
+  .multiloc-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border);
+  }
+  .multiloc-stat {
+    background: var(--cream); padding: 32px 24px;
+    text-align: center;
+  }
+  .multiloc-stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(28px, 3vw, 40px); font-weight: 300; line-height: 1;
+    color: var(--orange); margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .multiloc-stat-num span { color: var(--orange); }
+  .multiloc-stat-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ══════════════════════════════════════
+     NOT A POS — DARK BANNER
+  ══════════════════════════════════════ */
+  .not-pos {
+    padding: 80px 64px;
+    background: var(--navy);
+    border-top: 1px solid var(--border-dark);
+    border-bottom: 1px solid var(--border-dark);
+    text-align: center;
+  }
+  .not-pos-inner { max-width: 720px; margin: 0 auto; }
+  .not-pos h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 300; line-height: 1.1;
+    color: var(--cream); margin-bottom: 20px;
+  }
+  .not-pos h2 em { font-style: italic; color: var(--gold); }
+  .not-pos-plain { font-style: normal; font-weight: 300; color: var(--cream); opacity: 0.75; }
+  .not-pos p {
+    font-size: 15px; line-height: 1.75;
+    color: var(--muted-dark); max-width: 560px; margin: 0 auto;
+  }
+  .not-pos-tags {
+    display: flex; flex-wrap: wrap;
+    justify-content: center; gap: 10px;
+    margin-top: 36px;
+  }
+  .pos-tag {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.06em;
+    padding: 10px 20px;
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    background: transparent;
+  }
+  .pos-tag.is {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: transparent;
+    font-weight: 500;
+  }
+
+  /* ══════════════════════════════════════
+     MODULES — LIGHT
+  ══════════════════════════════════════ */
+  .modules {
+    padding: 120px 64px;
+    background: var(--cream);
+  }
+  .modules-inner { max-width: 1280px; margin: 0 auto; }
+  .modules-header {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 60px; align-items: end;
+    margin-bottom: 72px;
+  }
+  .modules-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(40px, 4vw, 60px);
+    font-weight: 300; line-height: 1.0;
+    letter-spacing: -0.02em; color: var(--navy);
+  }
+  .modules-header h2 em { font-style: italic; color: var(--orange); }
+  .modules-header p { font-size: 15px; line-height: 1.8; color: var(--muted); }
+
+  /* Hero 6 */
+  .hero-modules {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border); margin-bottom: 1px;
+  }
+  .hero-mod {
+    background: var(--cream); padding: 44px 36px;
+    display: flex; flex-direction: column; gap: 18px;
+    transition: background 0.2s;
+  }
+  .hero-mod:hover { background: #fff; }
+  .hero-mod-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px; font-weight: 300; line-height: 1;
+    color: rgba(212,83,26,0.12);
+  }
+  .hero-mod-name { font-size: 18px; font-weight: 500; color: var(--navy); line-height: 1.25; }
+  .hero-mod-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+  /* Expand bar */
+  .mod-expand-bar {
+    background: var(--cream-soft, #F0EDE8);
+    border: 1px solid var(--border);
+    border-top: none;
+    padding: 22px 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; gap: 40px;
+  }
+  .mod-expand-left { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .mod-expand-left strong { color: var(--navy); font-weight: 500; }
+  .mod-expand-btn {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--orange);
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  .mod-expand-btn::after { content: '↓'; font-size: 14px; transition: transform 0.25s; display: inline-block; }
+  .mod-expand-btn.open::after { transform: rotate(180deg); }
+
+  /* Extra modules */
+  .extra-modules {
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--border);
+  }
+  .extra-modules.open { display: grid; }
+  .extra-mod {
+    background: var(--cream-soft, #F0EDE8);
+    padding: 32px 28px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .extra-mod-name { font-size: 15px; font-weight: 500; color: var(--navy); line-height: 1.3; transition: color 0.2s; }
+  .extra-mod:hover .extra-mod-name { color: var(--orange); }
+  .extra-mod-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .extra-mod-text {
+    background: transparent !important;
+    justify-content: center;
+  }
+  .extra-mod-text-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 34px; font-weight: 300; font-style: italic;
+    color: var(--navy); line-height: 1;
+  }
+  .extra-mod-text-body { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* ══════════════════════════════════════
+     TAGLINE BREAK — DARK
+  ══════════════════════════════════════ */
+  .tagline-break {
+    padding: 100px 64px;
+    background: var(--navy);
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .tagline-break-glow {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 80% at 50% 50%, rgba(212,83,26,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .tagline-break blockquote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4.5vw, 60px);
+    font-weight: 300; line-height: 1.1;
+    color: var(--cream); position: relative; z-index: 1;
+    letter-spacing: -0.02em;
+  }
+  .tagline-break blockquote em { font-style: italic; color: var(--gold); }
+  .tagline-break blockquote strong { color: var(--orange); font-weight: 400; }
+
+  /* ══════════════════════════════════════
+     TESTIMONIAL — LIGHT
+  ══════════════════════════════════════ */
+  .testimonial {
+    padding: 100px 64px;
+    background: var(--cream-soft);
+  }
+  .testimonial-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 220px 1fr; gap: 80px; align-items: center;
+  }
+  .testi-badge {
+    text-align: center;
+    border: 1px solid var(--border-light); padding: 36px 24px;
+  }
+  .testi-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 72px; font-weight: 300;
+    color: var(--orange); line-height: 1; margin-bottom: 8px;
+  }
+  .testi-label {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted-light); line-height: 1.6;
+  }
+  .testi-body {}
+  .testi-quote-mark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 80px; font-weight: 300; line-height: 0.7;
+    color: var(--orange); opacity: 0.3; margin-bottom: 16px;
+  }
+  .testi-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(20px, 2.2vw, 28px);
+    font-weight: 300; line-height: 1.5;
+    color: var(--navy); margin-bottom: 32px;
+    font-style: italic;
+  }
+  .testi-author { display: flex; align-items: center; gap: 20px; }
+  .testi-line { width: 28px; height: 1px; background: var(--orange); }
+  .testi-name { font-size: 13px; font-weight: 500; color: var(--navy); }
+  .testi-role { font-size: 12px; color: var(--muted-light); margin-top: 3px; }
+
+  /* ══════════════════════════════════════
+     FIRST TABLE — DARK
+  ══════════════════════════════════════ */
+  .first-table {
+    padding: 120px 64px;
+    background: var(--navy);
+    position: relative; overflow: hidden;
+  }
+  .first-table-glow {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 55% 60% at 15% 50%, rgba(240,176,96,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 45% 55% at 80% 70%, rgba(212,83,26,0.06) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .first-table-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: start;
+    position: relative; z-index: 1;
+  }
+  .first-table-left {}
+  .first-table-left h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(40px, 4.5vw, 64px);
+    font-weight: 300; line-height: 1.0;
+    letter-spacing: -0.025em; color: var(--cream);
+    margin-bottom: 28px;
+  }
+  .first-table-left h2 em { font-style: italic; color: var(--gold); }
+  .first-table-left p {
+    font-size: 15px; line-height: 1.8;
+    color: var(--muted-dark); margin-bottom: 40px;
+  }
+  .ft-perks { display: flex; flex-direction: column; gap: 0; }
+  .ft-perk {
+    padding: 24px 0;
+    border-top: 1px solid var(--border-dark);
+    display: grid; grid-template-columns: 48px 1fr; gap: 20px; align-items: start;
+  }
+  .ft-perk:last-child { border-bottom: 1px solid var(--border-dark); }
+  .ft-perk-icon {
+    width: 40px; height: 40px;
+    border: 1px solid var(--border-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; margin-top: 2px;
+  }
+  .ft-perk-title { font-size: 14px; font-weight: 500; color: var(--cream); margin-bottom: 5px; }
+  .ft-perk-desc { font-size: 12px; color: var(--muted-dark); line-height: 1.6; }
+
+  /* Seat counter */
+  .ft-counter {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-dark);
+    padding: 40px;
+    margin-bottom: 32px;
+  }
+  .ft-counter-label {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ft-counter-label::before { content: ''; display: block; width: 16px; height: 1px; background: var(--gold); }
+  .ft-counter-bar-bg {
+    height: 4px; background: rgba(255,255,255,0.08); margin-bottom: 12px;
+  }
+  .ft-counter-bar {
+    height: 4px; width: 62%;
+    background: linear-gradient(to right, var(--orange), var(--gold));
+  }
+  .ft-counter-stat {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 44px; font-weight: 300; color: var(--cream);
+    line-height: 1; margin-bottom: 8px;
+  }
+  .ft-counter-stat span { color: var(--orange); }
+  .ft-counter-note { font-size: 12px; color: var(--muted-dark); }
+
+  /* CTA form in section */
+  .ft-form {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .ft-form input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-dark);
+    color: var(--cream); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; padding: 16px 20px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .ft-form input::placeholder { color: rgba(250,247,242,0.3); }
+  .ft-form input:focus { border-color: rgba(212,83,26,0.5); }
+  .ft-form-btn {
+    width: 100%;
+    background: var(--orange); color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    border: none; cursor: pointer; padding: 17px;
+    transition: background 0.22s;
+  }
+  .ft-form-btn:hover { background: var(--orange-light); }
+  .ft-form-note {
+    font-size: 11px; color: var(--muted-dark);
+    text-align: center; letter-spacing: 0.03em;
+  }
+
+  /* ══════════════════════════════════════
+     PRICING — LIGHT
+  ══════════════════════════════════════ */
+  .pricing {
+    padding: 120px 64px;
+    background: var(--cream);
+  }
+  .pricing-inner { max-width: 1280px; margin: 0 auto; }
+  .pricing-header { margin-bottom: 72px; }
+  .pricing-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 300; line-height: 1.05;
+    letter-spacing: -0.02em; color: var(--navy);
+    margin-bottom: 16px;
+  }
+  .pricing-header p {
+    font-size: 15px; color: var(--muted-light);
+    max-width: 480px; line-height: 1.7;
+  }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--border-light);
+  }
+  .price-card {
+    background: var(--cream);
+    padding: 44px 36px;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .price-card.featured {
+    background: var(--navy);
+    color: var(--cream);
+  }
+  .price-popular {
+    position: absolute; top: -1px; left: 36px;
+    font-size: 9px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+    background: var(--orange); color: white; padding: 5px 12px;
+  }
+  .price-name {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .price-card:not(.featured) .price-name { color: var(--muted-light); }
+  .price-card.featured .price-name { color: var(--gold); }
+  .price-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 60px; font-weight: 300; line-height: 1;
+    margin-bottom: 4px;
+  }
+  .price-amount sup { font-size: 24px; vertical-align: super; }
+  .price-card:not(.featured) .price-amount { color: var(--navy); }
+  .price-card.featured .price-amount { color: var(--cream); }
+  .price-period { font-size: 12px; margin-bottom: 8px; }
+  .price-card:not(.featured) .price-period { color: var(--muted-light); }
+  .price-card.featured .price-period { color: rgba(250,247,242,0.5); }
+  .price-setup { font-size: 12px; margin-bottom: 36px; padding-bottom: 28px; }
+  .price-card:not(.featured) .price-setup { color: var(--muted-light); border-bottom: 1px solid var(--border-light); }
+  .price-card.featured .price-setup { color: rgba(250,247,242,0.4); border-bottom: 1px solid var(--border-dark); }
+  .price-features { list-style: none; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+    .storage-tip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(0,0,0,0.08); color: var(--muted);
+    font-size: 9px; font-weight: 700; cursor: default;
+    position: relative; vertical-align: middle; margin-left: 4px;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+  .storage-tip::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--navy); color: var(--cream);
+    font-size: 11px; font-weight: 400; letter-spacing: 0.02em; text-transform: none;
+    white-space: nowrap; padding: 6px 12px;
+    pointer-events: none; opacity: 0; transition: opacity 0.15s;
+    z-index: 10;
+  }
+  .storage-tip:hover::after { opacity: 1; }
+  .price-features li { font-size: 13px; display: flex; align-items: flex-start; gap: 10px; line-height: 1.45; }
+  .price-card:not(.featured) .price-features li { color: var(--navy); }
+  .price-card.featured .price-features li { color: rgba(250,247,242,0.75); }
+  .price-features li::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 5px;
+  }
+  .price-card:not(.featured) .price-features li::before { background: var(--orange); }
+  .price-card.featured .price-features li::before { background: var(--gold); }
+  .price-enterprise .price-amount { font-size: 38px; padding-top: 12px; }
+  /* ── Billing toggle ── */
+  .billing-toggle {
+    display: flex; align-items: center; justify-content: center;
+    gap: 16px; margin-bottom: 56px;
+  }
+  .billing-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); transition: color 0.2s; cursor: pointer; user-select: none;
+  }
+  .billing-label.active { color: var(--navy); }
+  .toggle-track {
+    width: 52px; height: 28px;
+    background: #9CA3AF;
+    border-radius: 14px;
+    position: relative; cursor: pointer;
+    transition: background 0.25s;
+    flex-shrink: 0;
+  }
+  .toggle-track.annual { background: var(--navy); }
+  .toggle-pill {
+    width: 22px; height: 22px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute; top: 3px; left: 3px;
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  }
+  .toggle-track.annual .toggle-pill { transform: translateX(24px); }
+  .billing-save {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--orange); color: #fff;
+    padding: 3px 10px; border-radius: 0;
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .billing-save.visible { opacity: 1; }
+  /* Price swap */
+  .price-monthly { display: block; }
+  .price-annual  { display: none; }
+  .pricing-annual-mode .price-monthly { display: none; }
+  .pricing-annual-mode .price-annual  { display: block; }
+  .price-save {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--orange); margin-top: 6px; min-height: 18px;
+  }
+  .annual-note {
+    margin-top: 28px; padding: 20px 28px;
+    border: 1px solid var(--border-light);
+    font-size: 13px; color: var(--muted-light);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .annual-note strong { color: var(--navy); font-weight: 500; }
+  .annual-note::before {
+    content: '★'; color: var(--gold-soft); font-size: 14px; flex-shrink: 0;
+  }
+
+  /* ══════════════════════════════════════
+     VALUES — DARK
+  ══════════════════════════════════════ */
+  .values {
+    padding: 120px 64px;
+    background: var(--navy);
+    position: relative; overflow: hidden;
+  }
+  .values-glow {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 60% at 85% 30%, rgba(240,176,96,0.05) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .values-inner { max-width: 1280px; margin: 0 auto; position: relative; z-index: 1; }
+  .values-header {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 80px; align-items: end; margin-bottom: 80px;
+  }
+  .values-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(38px, 4.5vw, 60px);
+    font-weight: 300; line-height: 1.05;
+    letter-spacing: -0.02em; color: var(--cream);
+  }
+  .values-header h2 em { font-style: italic; color: var(--gold); }
+  .values-header p { font-size: 15px; color: var(--muted-dark); line-height: 1.75; }
+  .values-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border-dark);
+  }
+  .value-card {
+    background: var(--navy); padding: 44px 36px;
+    transition: background 0.2s;
+  }
+  .value-card:hover { background: var(--navy-mid); }
+  .value-word {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 30px; font-weight: 300; font-style: italic;
+    color: var(--gold); margin-bottom: 16px; line-height: 1;
+  }
+  .value-title { font-size: 13px; font-weight: 500; color: var(--cream); margin-bottom: 10px; }
+  .value-body { font-size: 13px; color: var(--muted-dark); line-height: 1.7; }
+
+  /* ══════════════════════════════════════
+     FOOTER — DARK
+  ══════════════════════════════════════ */
+  footer {
+    padding: 60px 64px;
+    background: var(--navy);
+    border-top: 1px solid var(--border-dark);
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    gap: 40px;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 600; color: var(--cream);
+    letter-spacing: 0.02em;
+  }
+  .footer-logo em { font-style: normal; color: var(--orange); }
+  .footer-center { text-align: center; }
+  .footer-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px; font-style: italic; font-weight: 300;
+    color: var(--orange); margin-bottom: 6px;
+  }
+  .footer-url {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(250,247,242,0.25);
+  }
+  .footer-right {
+    text-align: right;
+    font-size: 11px; color: rgba(250,247,242,0.3); line-height: 1.7;
+  }
+
+  /* ══════════════════════════════════════
+     ANIMATION
+  ══════════════════════════════════════ */
+  @keyframes riseUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════ */
+  /* ══════════════════════════════════════
+   RESPONSIVE — TABLET (≤1024px)
+══════════════════════════════════════ */
+@media (max-width: 1024px) {
+  nav { padding: 0 32px; }
+
+  /* Hero */
+  .hero { grid-template-columns: 1fr; padding: 120px 32px 80px; gap: 60px; }
+  .hero-right { display: none; }
+  .hero-line { display: none; }
+
+  /* Reality */
+  .reality { padding: 80px 32px; }
+  .reality-inner { grid-template-columns: 1fr; gap: 48px; }
+
+  /* What is */
+  .what-is { padding: 80px 32px; }
+  .what-is-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Multi-location banner */
+  .multiloc-banner { padding: 80px 32px; }
+  .multiloc-inner { grid-template-columns: 1fr; gap: 48px; }
+
+  /* Not POS */
+  .not-pos { padding: 64px 32px; }
+  .not-pos h2 { font-size: clamp(28px, 4vw, 48px); }
+
+  /* Pricing */
+  .billing-toggle { gap: 14px; }
+
+  /* Modules */
+  .modules { padding: 80px 32px; }
+  .modules-header { grid-template-columns: 1fr; gap: 28px; margin-bottom: 48px; }
+  .hero-modules { grid-template-columns: repeat(2, 1fr); }
+  .extra-modules { grid-template-columns: repeat(2, 1fr); }
+  .mod-expand-bar { flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px 24px; }
+
+  /* Tagline */
+  .tagline-break { padding: 72px 32px; }
+  .tagline-break blockquote { font-size: clamp(32px, 4vw, 52px); }
+
+  /* Testimonial */
+  .testimonial { padding: 80px 32px; }
+  .testimonial-inner { grid-template-columns: 1fr; gap: 48px; }
+
+  /* First Table */
+  .first-table { padding: 80px 32px; }
+  .first-table-inner { grid-template-columns: 1fr; gap: 48px; }
+  .ft-perks { grid-template-columns: repeat(2, 1fr); }
+
+  /* Pricing */
+  .pricing { padding: 80px 32px; }
+  .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Values */
+  .values { padding: 80px 32px; }
+  .values-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Footer */
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 40px; }
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — MOBILE (≤640px)
+══════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Nav */
+  nav { padding: 0 20px; }
+  .nav-right .nav-link { display: none; }
+  .nav-cta { padding: 9px 16px; font-size: 10px; }
+
+  /* Hero */
+  .hero { padding: 100px 20px 64px; gap: 40px; }
+  .hero h1 { font-size: clamp(36px, 10vw, 52px); }
+  .hero-sub { font-size: 15px; }
+  .hero-actions { flex-direction: column; align-items: stretch; gap: 12px; margin-top: 32px; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-ghost { width: 100%; text-align: center; box-sizing: border-box; display: block; }
+  .hero-cta { flex-direction: column; align-items: flex-start; }
+  .hero-cta .btn { width: 100%; text-align: center; }
+
+  /* Reality */
+  .reality { padding: 64px 20px; }
+  .reality-inner { grid-template-columns: 1fr; gap: 32px; }
+  .reality-problems { gap: 12px; }
+
+  /* What is */
+  .what-is { padding: 64px 20px; }
+  .what-is-grid { grid-template-columns: 1fr; }
+
+  /* Multi-location */
+  .multiloc-banner { padding: 64px 20px; }
+  .multiloc-stats { grid-template-columns: repeat(3, 1fr); }
+  .multiloc-stat-num { font-size: 40px; }
+
+  /* Not POS */
+  .not-pos { padding: 56px 20px; }
+  .not-pos h2 { font-size: clamp(28px, 8vw, 42px); }
+
+  /* Modules */
+  .modules { padding: 64px 20px; }
+  .modules-header { margin-bottom: 36px; }
+  .modules-header h2 { font-size: clamp(32px, 9vw, 48px); }
+  .hero-modules { grid-template-columns: 1fr; }
+  .hero-mod { padding: 32px 24px; }
+  .hero-mod-num { font-size: 36px; }
+  .hero-mod-name { font-size: 17px; }
+  .extra-modules { grid-template-columns: 1fr; }
+  .extra-mod { padding: 24px 20px; }
+  .extra-mod-text { padding: 24px 20px; }
+  .mod-expand-bar { padding: 18px 20px; }
+  .mod-expand-left { font-size: 12px; }
+
+  /* Tagline */
+  .tagline-break { padding: 56px 20px; }
+  .tagline-break blockquote { font-size: clamp(24px, 7vw, 36px); }
+
+  /* Testimonial */
+  .testimonial { padding: 64px 20px; }
+  .testimonial-quote { font-size: clamp(18px, 5vw, 26px); }
+
+  /* First Table */
+  .first-table { padding: 64px 20px; }
+  .ft-perks { grid-template-columns: 1fr; }
+  .waitlist-form { flex-direction: column; }
+  .waitlist-form input { width: 100%; }
+  .waitlist-form .btn { width: 100%; text-align: center; }
+
+  /* Pricing */
+  .pricing { padding: 64px 20px; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .price-addon { order: 5; }
+  .pricing-card { padding: 32px 24px; }
+
+  /* Values */
+  .values { padding: 64px 20px; }
+  .values-grid { grid-template-columns: 1fr; }
+
+  /* Footer */
+  footer { padding: 40px 20px; }
+  .footer-inner { grid-template-columns: 1fr; gap: 40px; }
+  .footer-logo-img { height: 22px; }
+
+  /* First Table */
+  .ft-counter { padding: 28px 20px; }
+  .ft-counter-num { font-size: 52px; }
+  .hero-card { padding: 28px 20px; }
+
+  /* Not POS */
+  .not-pos-inner { padding: 0 4px; }
+
+  /* Pricing */
+  .price-card { padding: 28px 20px; }
+  .price-amount { font-size: 52px; }
+  .annual-note { flex-direction: column; gap: 8px; padding: 16px 20px; font-size: 12px; }
+  .billing-toggle { gap: 12px; }
+  .billing-label { font-size: 11px; }
+  .billing-save { font-size: 9px; padding: 2px 8px; }
+
+  /* Storage tooltip — show below on mobile */
+  .storage-tip::after { left: 0; transform: none; bottom: calc(100% + 6px); }
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — SMALL MOBILE (≤390px)
+══════════════════════════════════════ */
+@media (max-width: 390px) {
+  .hero h1 { font-size: 30px; }
+  .hero-badge { font-size: 10px; }
+  .hero-mod-name { font-size: 15px; }
+  .price-card { padding: 24px 16px; }
+  .price-amount { font-size: 44px; }
+  .multiloc-stats { grid-template-columns: 1fr; }
+  .multiloc-stat { padding: 20px 16px; }
+  .not-pos-tags { gap: 8px; }
+  .pos-tag { font-size: 11px; padding: 8px 14px; }
+  .billing-toggle { flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .billing-save { margin-top: 4px; }
+  .ft-counter { padding: 20px 16px; }
+  .mod-expand-bar { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav id="nav">
+  <a href="#" class="logo-img-link"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDExLjc5IDI0Mi41MyI+PHBhdGggZD0iTTk1OS40MiwyOS41NGgzMi45MnYxODMuNDVoLTMyLjkydi0zLjY2aDE1LjU5VjMzLjE5aC0xNS41OXYtMy42NloiIHN0eWxlPSJmaWxsOiNkNDUzMWE7Ii8+PHBhdGggZD0iTTEzMy40NSw2MS4xOWMzLjc3LDEuNjQsNy44OCw0LjA0LDEyLjM0LDcuMjEsMS4yOS45OSwyLjI4LDEuNDksMi45NywxLjQ5LDEuODgsMCwzLjEyLTMuMDIsMy43Mi05LjA3aDMuNDJjLS40LDYuNDUtLjYsMTcuODQtLjYsMzQuMmgtMy40MmMtLjg5LTUuMjUtMS44NC05LjU5LTIuODItMTMuMDEtLjk5LTMuNDItMi41My02LjQyLTQuNjEtOS0yLjg4LTMuNTctNi42Mi02LjM5LTExLjIzLTguNDctNC42MS0yLjA4LTkuNDQtMy4xMi0xNC41LTMuMTItNi41NCwwLTEyLjI5LDIuMTMtMTcuMjUsNi4zOS00Ljk2LDQuMjYtOC43NywxMC4zMy0xMS40NSwxOC4yMS0yLjY4LDcuODgtNC4wMSwxNy4wOC00LjAxLDI3LjU4LDAsMTcuODQsMi44NSwzMC45LDguNTUsMzkuMTgsNS43LDguMjgsMTQuNjUsMTIuNDEsMjYuODQsMTIuNDEsNS45NSwwLDExLjEtMS41NCwxNS40Ni00LjYxLDEuNzgtMS4xOSwyLjk1LTIuMzUsMy40OS0zLjQ5LjU0LTEuMTQuODItMi43LjgyLTQuNjh2LTE0LjI3YzAtNC4xNi0uNC03LjE5LTEuMTktOS4wNy0uNzktMS44OC0yLjE4LTMuMTctNC4xNi0zLjg3LTEuOTgtLjY5LTUuMi0xLjE0LTkuNjYtMS4zNHYtMi45N2M1LjE1LjMsMTIuMTQuNDUsMjAuOTYuNDUsNi43NCwwLDExLjg5LS4xNSwxNS40Ni0uNDV2Mi45N2MtMi4yOC4yLTMuOTQuNi00Ljk4LDEuMTktMS4wNC42LTEuNzQsMS43NC0yLjA4LDMuNDItLjM1LDEuNjktLjUyLDQuNDEtLjUyLDguMTh2MjkuNDRoLTIuOTdjLS4xLTEuOTgtLjUtMy44OS0xLjE5LTUuNzItLjY5LTEuODMtMS42NC0yLjc1LTIuODItMi43NS0uNTksMC0xLjE5LjE1LTEuNzguNDVzLTEuNjQuOTktMy4xMiwyLjA4Yy0zLjQ3LDIuNjgtNy4wNiw0LjY4LTEwLjc4LDYuMDItMy43MiwxLjM0LTcuODYsMi4wMS0xMi40MiwyLjAxLTEwLjIxLDAtMTguOTYtMi4xLTI2LjI0LTYuMzItNy4yOS00LjIxLTEyLjg2LTEwLjI4LTE2LjczLTE4LjIxLTMuODctNy45My01LjgtMTcuNC01LjgtMjguNHMyLjA2LTIxLjI0LDYuMTctMjkuODFjNC4xMS04LjU3LDkuNzktMTUuMTcsMTcuMDItMTkuNzcsNy4yMy00LjYxLDE1LjQ2LTYuOTEsMjQuNjgtNi45MSw1Ljg1LDAsMTAuNjUuODIsMTQuNDIsMi40NVoiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTIzNi40OSwxNDguMjVjLTEuNzgsNS40NS01LjEzLDEwLjE0LTEwLjA0LDE0LjA1LTQuOTEsMy45MS0xMC44Myw1Ljg3LTE3Ljc3LDUuODdzLTEzLjE0LTEuNjEtMTguMjktNC44M2MtNS4xNi0zLjIyLTkuMS03LjczLTExLjgyLTEzLjUzLTIuNzMtNS44LTQuMDktMTIuNTEtNC4wOS0yMC4xNSwwLTguNjIsMS4zOS0xNi4xMSw0LjE2LTIyLjQ1LDIuNzctNi4zNCw2LjY5LTExLjIzLDExLjc1LTE0LjY1LDUuMDYtMy40MiwxMC45NS01LjEzLDE3LjY5LTUuMTMsOC45MiwwLDE1Ljc4LDIuNywyMC41OSw4LjEsNC44MSw1LjQsNy4yMSwxMy42LDcuMjEsMjQuNjFoLTQ2LjU0Yy0uMywyLjc4LS40NSw1Ljk1LS40NSw5LjUyLDAsNi41NCwxLjA2LDEyLjI0LDMuMiwxNy4xLDIuMTMsNC44Niw0Ljk2LDguNiw4LjQ3LDExLjIzLDMuNTIsMi42Myw3LjIxLDMuOTQsMTEuMDgsMy45NCw0Ljc2LDAsOC45Ny0xLjE0LDEyLjY0LTMuNDIsMy42Ny0yLjI4LDYuNzQtNi4xLDkuMjItMTEuNDVsMi45NywxLjE5Wk0xOTUuNDUsOTcuMWMtMy4zNyw0LjU2LTUuNDUsMTEuMy02LjI1LDIwLjIyaDMyLjQxYy4yLTcuNzMtLjkyLTE0LjE3LTMuMzUtMTkuMzMtMi40My01LjE1LTYuMDItNy43My0xMC43OC03Ljczcy04LjY3LDIuMjgtMTIuMDQsNi44NFoiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTI3MS4xMyw4OS42N2gyMi4wMXYyLjk3aC0yMi4wMXY1Ny41NGMwLDQuNDYuODIsNy42OCwyLjQ1LDkuNjYsMS42NCwxLjk4LDMuOTksMi45Nyw3LjA2LDIuOTdzNS43LTEuMjQsNy44OC0zLjcyYzIuMTgtMi40OCw0LjAxLTYuNTQsNS41LTEyLjE5bDIuOTcuNzRjLTIuNDgsMTMuNjgtOC45MiwyMC41Mi0xOS4zMywyMC41Mi0zLjM3LDAtNi4xNS0uNC04LjMzLTEuMTktMi4xOC0uNzktNC4xMS0yLjAzLTUuOC0zLjcyLTIuMTgtMi4xOC0zLjY5LTQuODUtNC41My04LjAzLS44NC0zLjE3LTEuMjYtNy40My0xLjI2LTEyLjc5di00OS44MWgtMTQuMjd2LTIuOTdoMTQuMjd2LTIyLjc1YzUuNTUtLjIsMTAuMDEtLjg5LDEzLjM4LTIuMDh2MjQuODNaIiBzdHlsZT0iZmlsbDojZmZmOyIvPjxwYXRoIGQ9Ik0zNzQuNDYsMTE5LjkyYzQuNjYsNC44MSw2Ljk5LDEwLjU4LDYuOTksMTcuMzIsMCw1LjY1LTEuNDQsMTAuNjYtNC4zMSwxNS4wMi0yLjg4LDQuMzYtNi45OSw3Ljc2LTEyLjM0LDEwLjE5LTUuMzUsMi40My0xMS43LDMuNjQtMTkuMDMsMy42NC0yLjY4LDAtNC45Ni0uMDUtNi44NC0uMTUtNi4zNC0uMi0xMi41OS0uMy0xOC43My0uMy04LjEzLDAtMTQuMjcuMTUtMTguNDQuNDV2LTIuOTdjMy41Ny0uMiw2LjE3LS41OSw3LjgxLTEuMTlzMi43NS0xLjczLDMuMzUtMy40MmMuNTktMS42OC44OS00LjQxLjg5LTguMTh2LTczLjc1YzAtMy43Ny0uMy02LjQ5LS44OS04LjE4LS42LTEuNjgtMS43MS0yLjgyLTMuMzUtMy40Mi0xLjY0LS41OS00LjI0LS45OS03LjgxLTEuMTl2LTIuOTdjNC4xNi4zLDEwLjIxLjQ1LDE4LjE0LjQ1bDE2LjA2LS4xNWMxLjg4LS4xLDQuMDEtLjE1LDYuMzktLjE1LDEwLjExLDAsMTcuODcsMi4xMywyMy4yNyw2LjM5LDUuNCw0LjI2LDguMSw5LjkxLDguMSwxNi45NSwwLDUuNzUtMS44MSwxMC45LTUuNDMsMTUuNDYtMy42Miw0LjU2LTkuMzQsOC4wMy0xNy4xNywxMC40MXYuM2MxMC45LDEuNDksMTguNjgsNC42MywyMy4zNCw5LjQ0Wk0zMzEuNzIsNjQuODRjLTEuNTQuNjktMi42LDEuOTMtMy4yLDMuNzJzLS44OSw0LjQ2LS44OSw4LjAzdjMzLjZoOS45NmM4LjEzLDAsMTMuOC0yLjIsMTcuMDItNi42MiwzLjIyLTQuNDEsNC44My0xMC4yOCw0LjgzLTE3LjYycy0xLjY0LTEyLjk4LTQuOTEtMTYuNjVjLTMuMjctMy42Ny04LjU3LTUuNS0xNS45MS01LjUtMy4wNywwLTUuMzguMzUtNi45MSwxLjA0Wk0zNjYuNTgsMTM2LjY1YzAtNy44My0yLjExLTEzLjc4LTYuMzItMTcuODQtNC4yMS00LjA2LTEwLjkzLTYuMS0yMC4xNS02LjFoLTEyLjQ5djM3LjYyYzAsMy41Ny4zLDYuMi44OSw3Ljg4LjU5LDEuNjksMS42NiwyLjg1LDMuMiwzLjQ5LDEuNTQuNjUsMy44OS45Nyw3LjA2Ljk3LDE4LjUzLDAsMjcuOC04LjY3LDI3LjgtMjYuMDJaIiBzdHlsZT0iZmlsbDojZmZmOyIvPjxwYXRoIGQ9Ik0zOTguNDcsMTYyLjQ1Yy0zLjAyLTMuMTItNC41My03LjQ2LTQuNTMtMTMuMDEsMC00LjQ2LDEuMjEtOC4xMywzLjY0LTExLDIuNDMtMi44Nyw1LjMtNS4xNSw4LjYyLTYuODQsMy4zMi0xLjY4LDcuNzEtMy40NywxMy4xNi01LjM1LDUuNTUtMS44OCw5LjY2LTMuNjIsMTIuMzQtNS4yLDIuNjgtMS41OSw0LjAxLTMuNzIsNC4wMS02LjM5di05LjIyYzAtNS43NS0xLjIyLTkuNjktMy42NC0xMS44Mi0yLjQzLTIuMTMtNS44Mi0zLjItMTAuMTgtMy4yLTYuOTQsMC0xMS44NSwxLjc4LTE0LjcyLDUuMzUsMS45OC41LDMuNjQsMS41NCw0Ljk4LDMuMTIsMS4zNCwxLjU5LDIuMDEsMy41NywyLjAxLDUuOTVzLS43OSw0LjQ0LTIuMzgsNS44N2MtMS41OSwxLjQ0LTMuNjIsMi4xNi02LjEsMi4xNi0yLjc4LDAtNC44Ni0uODctNi4yNC0yLjYtMS4zOS0xLjczLTIuMDgtMy44NC0yLjA4LTYuMzJzLjU3LTQuMzYsMS43MS01Ljk1YzEuMTQtMS41OCwyLjg1LTMuMTcsNS4xMy00Ljc2LDIuMzgtMS42OCw1LjQtMy4wNyw5LjA3LTQuMTYsMy42Ny0xLjA5LDcuNjgtMS42NCwxMi4wNC0xLjY0LDcuNzMsMCwxMy41OCwxLjg0LDE3LjU0LDUuNSwyLjQ4LDIuMjgsNC4xNCw1LjAzLDQuOTgsOC4yNS44NCwzLjIyLDEuMjYsNy40NiwxLjI2LDEyLjcxdjQxLjMzYzAsMi40OC4zNSw0LjI2LDEuMDQsNS4zNS42OSwxLjA5LDEuODgsMS42NCwzLjU3LDEuNjQsMS4xOSwwLDIuMy0uMjcsMy4zNS0uODIsMS4wNC0uNTQsMi4xNi0xLjMxLDMuMzUtMi4zbDEuNjQsMi41M2MtMi41OCwxLjk4LTQuNzgsMy40LTYuNjIsNC4yNC0xLjg0Ljg0LTQuMTQsMS4yNi02LjkxLDEuMjYtNC43NiwwLTguMDgtMS4xOS05Ljk2LTMuNTctMS44OC0yLjM4LTIuODItNS42LTIuODItOS42Ni0yLjk3LDQuOTYtNi4zOSw4LjQtMTAuMjYsMTAuMzMtMy44NywxLjkzLTguMjMsMi45LTEzLjA4LDIuOS02LjI0LDAtMTAuODgtMS41Ni0xMy45LTQuNjhaTTQzNS43MiwxNDkuODh2LTI5LjE0Yy0uODksMS4zOS0yLjEzLDIuNTMtMy43MiwzLjQyLTEuNTkuODktNC4wMSwyLjA4LTcuMjksMy41Ny0zLjc3LDEuNTktNi44MiwzLjEtOS4xNCw0LjU0LTIuMzMsMS40NC00LjM0LDMuNC02LjAyLDUuODctMS42OSwyLjQ4LTIuNTMsNS42NS0yLjUzLDkuNTIsMCw0LjQ2LDEuMDksNy44MywzLjI3LDEwLjExLDIuMTgsMi4yOCw1LjA1LDMuNDIsOC42MiwzLjQyLDYuNTQsMCwxMi4xNC0zLjc3LDE2LjgtMTEuM1oiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTUyMC45MSw5Mi4yYzQuNjYsMy4wNyw2Ljk5LDYuODksNi45OSwxMS40NSwwLDIuNTgtLjc0LDQuNjEtMi4yMyw2LjEtMS40OSwxLjQ5LTMuMzcsMi4yMy01LjY1LDIuMjNzLTQuMjEtLjY3LTUuOC0yLjAxYy0xLjU5LTEuMzQtMi4zOC0zLjE1LTIuMzgtNS40MywwLTIuMDguNi0zLjg0LDEuNzktNS4yOCwxLjE5LTEuNDQsMi42OC0yLjQsNC40Ni0yLjktLjk5LTEuNzgtMi43NS0zLjI3LTUuMjgtNC40Ni0yLjUzLTEuMTktNS4yMy0xLjc4LTguMS0xLjc4LTMuNjcsMC03LjA5LDEuMTctMTAuMjYsMy40OS0zLjE3LDIuMzMtNS44LDYuMi03Ljg4LDExLjYtMi4wOCw1LjQtMy4xMiwxMi41Mi0zLjEyLDIxLjM0LDAsMTIuMjksMS45OCwyMS4yNCw1Ljk1LDI2Ljg0LDMuOTYsNS42LDkuMTIsOC40LDE1LjQ2LDguNCw0LjI2LDAsOC4zLTEuMjQsMTIuMTItMy43MiwzLjgxLTIuNDgsNi45Ni02LjM0LDkuNDQtMTEuNmwyLjgyLDEuMDRjLTEuNjksNS42NS00LjgzLDEwLjUxLTkuNDQsMTQuNTctNC42MSw0LjA2LTEwLjU4LDYuMS0xNy45Miw2LjEtNi4xNSwwLTExLjcyLTEuNTktMTYuNzMtNC43Ni01LjAxLTMuMTctOC45NS03Ljc1LTExLjgyLTEzLjc1LTIuODgtNi00LjMxLTEyLjk2LTQuMzEtMjAuODlzMS40Ni0xNS4xNyw0LjM5LTIxLjQxYzIuOTItNi4yNSw3LjAxLTExLjEzLDEyLjI3LTE0LjY1LDUuMjUtMy41MiwxMS4yNS01LjI4LDE3Ljk5LTUuMjhzMTIuMzksMS41OSwxNy4yNSw0Ljc2WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNNjA5LjgyLDE2MC43NGMxLjQ5LDEuMTksMy4yNywxLjkzLDUuMzUsMi4yM3YzLjEyYy01Ljk1LS40LTkuOTYtLjYtMTIuMDQtLjYtMi42OCwwLTguMTguMi0xNi41LjZ2LTMuMTJjMS4zOSwwLDIuNS0uMjcsMy4zNS0uODIuODQtLjU0LDEuMjYtMS4yMSwxLjI2LTIuMDFzLS4zLTEuNTQtLjg5LTIuMjNsLTE3LjEtMjQuOThjLTEuNjktMi40OC0zLjMtNC4xNC00LjgzLTQuOTgtMS41NC0uODQtMy42NC0xLjM2LTYuMzItMS41NnYyNS44N2MwLDQuMDcuNzIsNi44NywyLjE2LDguNCwxLjQ0LDEuNTQsMy45OSwyLjMsNy42NiwyLjN2My4xMmMtOC4zMy0uNC0xMy44My0uNi0xNi41LS42LTIuODgsMC04Ljg3LjItMTcuOTkuNnYtMy4xMmM0LjE2LDAsNy4wOS0uNzcsOC43Ny0yLjMsMS42OC0xLjU0LDIuNTMtNC4zNCwyLjUzLTguNHYtODQuOWMwLTQuNTYtLjg0LTcuODgtMi41My05Ljk2LTEuNjktMi4wOC00LjYxLTMuMTItOC43Ny0zLjEydi0zLjEyYzMuMTcuMyw2LjI0LjQ1LDkuMjIuNDUsNi4yNCwwLDExLjQtLjY5LDE1LjQ2LTIuMDh2NzMuNzVjMi44Ny0uMzksNS4yOC0xLjA2LDcuMjEtMi4wMSwxLjkzLS45NCwzLjc5LTIuMyw1LjU4LTQuMDlsMTEtMTEuNDVjMy4xNy0zLjI3LDQuNzYtNiw0Ljc2LTguMTgsMC0xLjY4LTEuMDItMi45NS0zLjA1LTMuNzktMi4wMy0uODQtNC42OC0xLjI2LTcuOTUtMS4yNnYtMi45N2M2Ljk0LjQsMTIuNTQuNiwxNi44LjYsNC42NiwwLDguOTctLjIsMTIuOTQtLjZ2Mi45N2MtNC44Ni40LTkuMzIsMi43My0xMy4zOCw2Ljk5bC0xOC4xNCwxOS4wMywyNi45MSwzNi43MmMxLjg4LDIuNDgsMy41Nyw0LjMxLDUuMDUsNS41WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNNjgyLjE1LDkxLjc1YzQuMjEsMi44OCw3LjUxLDcuMDksOS44OSwxMi42NCwyLjM4LDUuNTUsMy41NywxMi4xOSwzLjU3LDE5Ljkycy0xLjIyLDE0Ljc3LTMuNjQsMjEuNDFjLTIuNDMsNi42NC02LjIsMTIuMDQtMTEuMywxNi4yMS01LjExLDQuMTYtMTEuNDcsNi4yNS0xOS4xMSw2LjI1LTMuNzcsMC03LjE5LS43NC0xMC4yNi0yLjIzLTMuMDctMS40OS01LjQ1LTMuNDItNy4xNC01Ljh2MTkuMDNjMCw0LjA2LDEuMTksNi44NiwzLjU3LDguNCwyLjM4LDEuNTQsNS45NSwyLjMsMTAuNzEsMi4zdjMuMTJsLTMuNDItLjE1Yy05LjIyLS4zLTE1LjIyLS40NS0xNy45OS0uNDUtMi4zOCwwLTcuNzMuMi0xNi4wNi42di0zLjEyYzMuNjcsMCw2LjIyLS42Nyw3LjY2LTIuMDEsMS40NC0xLjM0LDIuMTYtMy43NCwyLjE2LTcuMjF2LTc0Ljk0YzAtNC41Ni0uODQtNy44OC0yLjUzLTkuOTYtMS42OS0yLjA4LTQuNjEtMy4xMi04Ljc3LTMuMTJ2LTMuMTJjMy4wNy4zLDYuMTQuNDUsOS4yMi40NSw2LjI1LDAsMTEuNC0uNjksMTUuNDYtMi4wOHYxNS43NmMyLjE4LTUuMTUsNS4zNS05LjE0LDkuNTItMTEuOTcsNC4xNi0yLjgyLDguOTItNC4yNCwxNC4yNy00LjI0czkuOTgsMS40NCwxNC4yLDQuMzFaTTY4MS4xOSwxMjYuMzljMC0yMi45OS01Ljc1LTM0LjQ5LTE3LjI1LTM0LjQ5LTQuNDYsMC04LjQ4LDEuNjEtMTIuMDQsNC44My0zLjU3LDMuMjItNi4xNSw3Ljg2LTcuNzMsMTMuOXY0NC42YzEuMzksMi44OCwzLjQyLDUuMTgsNi4xLDYuOTEsMi42OCwxLjczLDUuOSwyLjYsOS42NiwyLjYsMTQuMTcsMCwyMS4yNi0xMi43OSwyMS4yNi0zOC4zNloiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTczMC41NSwxNTIuMjZjMCw0LjA3Ljg0LDYuODcsMi41Myw4LjQsMS42OCwxLjU0LDQuNjEsMi4zLDguNzcsMi4zdjMuMTJjLTkuMTItLjQtMTUuMTItLjYtMTcuOTktLjZzLTguODcuMi0xNy45OS42di0zLjEyYzQuMTYsMCw3LjA5LS43Nyw4Ljc3LTIuMywxLjY4LTEuNTQsMi41My00LjM0LDIuNTMtOC40di04NC45YzAtNC41Ni0uODQtNy44OC0yLjUzLTkuOTYtMS42OS0yLjA4LTQuNjEtMy4xMi04Ljc3LTMuMTJ2LTMuMTJjMy4wNy4zLDYuMTUuNDUsOS4yMi40NSw2LjI1LDAsMTEuNC0uNjksMTUuNDYtMi4wOHYxMDIuNzRaIiBzdHlsZT0iZmlsbDojZmZmOyIvPjxwYXRoIGQ9Ik03NTUuNDUsMTYyLjQ1Yy0zLjAzLTMuMTItNC41NC03LjQ2LTQuNTQtMTMuMDEsMC00LjQ2LDEuMjEtOC4xMywzLjY0LTExLDIuNDMtMi44Nyw1LjMtNS4xNSw4LjYyLTYuODQsMy4zMi0xLjY4LDcuNzEtMy40NywxMy4xNi01LjM1LDUuNTUtMS44OCw5LjY2LTMuNjIsMTIuMzQtNS4yLDIuNjgtMS41OSw0LjAxLTMuNzIsNC4wMS02LjM5di05LjIyYzAtNS43NS0xLjIyLTkuNjktMy42NC0xMS44Mi0yLjQzLTIuMTMtNS44Mi0zLjItMTAuMTktMy4yLTYuOTQsMC0xMS44NSwxLjc4LTE0LjcyLDUuMzUsMS45OC41LDMuNjQsMS41NCw0Ljk4LDMuMTIsMS4zNCwxLjU5LDIuMDEsMy41NywyLjAxLDUuOTVzLS43OSw0LjQ0LTIuMzgsNS44N2MtMS41OSwxLjQ0LTMuNjIsMi4xNi02LjEsMi4xNi0yLjc4LDAtNC44Ni0uODctNi4yNS0yLjYtMS4zOS0xLjczLTIuMDgtMy44NC0yLjA4LTYuMzJzLjU3LTQuMzYsMS43MS01Ljk1YzEuMTQtMS41OCwyLjg1LTMuMTcsNS4xMy00Ljc2LDIuMzgtMS42OCw1LjQtMy4wNyw5LjA3LTQuMTYsMy42Ny0xLjA5LDcuNjgtMS42NCwxMi4wNC0xLjY0LDcuNzMsMCwxMy41OCwxLjg0LDE3LjU0LDUuNSwyLjQ4LDIuMjgsNC4xNCw1LjAzLDQuOTgsOC4yNS44NCwzLjIyLDEuMjYsNy40NiwxLjI2LDEyLjcxdjQxLjMzYzAsMi40OC4zNSw0LjI2LDEuMDQsNS4zNS42OSwxLjA5LDEuODgsMS42NCwzLjU3LDEuNjQsMS4xOSwwLDIuMy0uMjcsMy4zNS0uODIsMS4wNC0uNTQsMi4xNi0xLjMxLDMuMzUtMi4zbDEuNjQsMi41M2MtMi41OCwxLjk4LTQuNzgsMy40LTYuNjIsNC4yNC0xLjg0Ljg0LTQuMTQsMS4yNi02LjkxLDEuMjYtNC43NiwwLTguMDgtMS4xOS05Ljk2LTMuNTctMS44OC0yLjM4LTIuODItNS42LTIuODItOS42Ni0yLjk3LDQuOTYtNi4zOSw4LjQtMTAuMjYsMTAuMzMtMy44NywxLjkzLTguMjMsMi45LTEzLjA4LDIuOS02LjI1LDAtMTAuODgtMS41Ni0xMy45LTQuNjhaTTc5Mi43LDE0OS44OHYtMjkuMTRjLS44OSwxLjM5LTIuMTMsMi41My0zLjcyLDMuNDItMS41OS44OS00LjAxLDIuMDgtNy4yOSwzLjU3LTMuNzcsMS41OS02LjgyLDMuMS05LjE0LDQuNTQtMi4zMywxLjQ0LTQuMzQsMy40LTYuMDIsNS44Ny0xLjY5LDIuNDgtMi41Myw1LjY1LTIuNTMsOS41MiwwLDQuNDYsMS4wOSw3LjgzLDMuMjcsMTAuMTEsMi4xOCwyLjI4LDUuMDYsMy40Miw4LjYyLDMuNDIsNi41NCwwLDEyLjE0LTMuNzcsMTYuOC0xMS4zWiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNODQ3LjQxLDg5LjY3aDIydjIuOTdoLTIydjU3LjU0YzAsNC40Ni44Miw3LjY4LDIuNDUsOS42NiwxLjY0LDEuOTgsMy45OSwyLjk3LDcuMDYsMi45N3M1LjctMS4yNCw3Ljg4LTMuNzJjMi4xOC0yLjQ4LDQuMDEtNi41NCw1LjUtMTIuMTlsMi45Ny43NGMtMi40OCwxMy42OC04LjkyLDIwLjUyLTE5LjMzLDIwLjUyLTMuMzcsMC02LjE1LS40LTguMzMtMS4xOS0yLjE4LS43OS00LjExLTIuMDMtNS44LTMuNzItMi4xOC0yLjE4LTMuNjktNC44NS00LjU0LTguMDMtLjg0LTMuMTctMS4yNi03LjQzLTEuMjYtMTIuNzl2LTQ5LjgxaC0xNC4yN3YtMi45N2gxNC4yN3YtMjIuNzVjNS41NS0uMiwxMC4wMS0uODksMTMuMzgtMi4wOHYyNC44M1oiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTk0MC42NCwxNDguMjVjLTEuNzgsNS40NS01LjEzLDEwLjE0LTEwLjA0LDE0LjA1LTQuOTEsMy45MS0xMC44Myw1Ljg3LTE3Ljc3LDUuODdzLTEzLjE0LTEuNjEtMTguMjktNC44M2MtNS4xNi0zLjIyLTkuMS03LjczLTExLjgyLTEzLjUzLTIuNzMtNS44LTQuMDktMTIuNTEtNC4wOS0yMC4xNSwwLTguNjIsMS4zOS0xNi4xMSw0LjE2LTIyLjQ1LDIuNzctNi4zNCw2LjY5LTExLjIzLDExLjc1LTE0LjY1LDUuMDUtMy40MiwxMC45NS01LjEzLDE3LjY5LTUuMTMsOC45MiwwLDE1Ljc4LDIuNywyMC41OSw4LjEsNC44MSw1LjQsNy4yMSwxMy42LDcuMjEsMjQuNjFoLTQ2LjU0Yy0uMywyLjc4LS40NSw1Ljk1LS40NSw5LjUyLDAsNi41NCwxLjA2LDEyLjI0LDMuMiwxNy4xLDIuMTMsNC44Niw0Ljk2LDguNiw4LjQ4LDExLjIzLDMuNTIsMi42Myw3LjIxLDMuOTQsMTEuMDgsMy45NCw0Ljc2LDAsOC45Ny0xLjE0LDEyLjY0LTMuNDIsMy42Ny0yLjI4LDYuNzQtNi4xLDkuMjItMTEuNDVsMi45NywxLjE5Wk04OTkuNiw5Ny4xYy0zLjM3LDQuNTYtNS40NSwxMS4zLTYuMjQsMjAuMjJoMzIuNDFjLjItNy43My0uOTItMTQuMTctMy4zNS0xOS4zMy0yLjQzLTUuMTUtNi4wMi03LjczLTEwLjc4LTcuNzNzLTguNjcsMi4yOC0xMi4wNCw2Ljg0WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNNTIuMzYsMjEyLjk5SDE5LjQ1VjI5LjU0aDMyLjkydjMuNjZoLTE1LjU5djE3Ni4xNGgxNS41OXYzLjY2WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48L3N2Zz4=" alt="GetBackplate" class="logo-img"></a>
+  <div class="nav-right">
+    <a href="#platform" class="nav-link">Platform</a>
+    <a href="#modules" class="nav-link">Modules</a>
+    <a href="#pricing" class="nav-link">Pricing</a>
+    <a href="#first-table" class="nav-cta">Request Your Seat</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     HERO
+══════════════════════════════════════ -->
+<section class="hero dark">
+  <div class="hero-glow"></div>
+  <div class="hero-line"></div>
+
+  <div class="hero-left">
+    <div class="hero-eyebrow">Soft Launch 2025 — First Table Program</div>
+    <h1>
+      You're invited<br>
+      to the <em>First</em><br>
+      <span class="acc">Table.</span>
+    </h1>
+    <p class="hero-sub">
+      The operations platform restaurant owners, managers, and teams have been waiting for. Not a POS. The system that runs everything your POS ignores.
+    </p>
+    <div class="hero-actions">
+      <a href="#first-table" class="btn-primary">Request Your Seat</a>
+      <a href="#modules" class="btn-ghost">See the modules</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="hero-card">
+      <div class="hero-card-tag">First Table Members Get</div>
+      <h3>A seat at the table<br>where it gets <em>built.</em></h3>
+      <div class="card-perks">
+        <div class="card-perk">
+          <div class="perk-dot"></div>
+          <div>
+            <div class="perk-title">Locked-In Pricing — Forever</div>
+            <div class="perk-desc">The rate you join at is the rate you keep. No increases. Ever.</div>
+          </div>
+        </div>
+        <div class="card-perk">
+          <div class="perk-dot"></div>
+          <div>
+            <div class="perk-title">Priority Access Before Public Launch</div>
+            <div class="perk-desc">Go live before anyone else. No waiting.</div>
+          </div>
+        </div>
+        <div class="card-perk">
+          <div class="perk-dot"></div>
+          <div>
+            <div class="perk-title">Direct Line to the Team</div>
+            <div class="perk-desc">A real person. Your feedback shapes what gets built next.</div>
+          </div>
+        </div>
+        <div class="card-perk">
+          <div class="perk-dot"></div>
+          <div>
+            <div class="perk-title">First Table Member Badge</div>
+            <div class="perk-desc">Permanently on your account. You were here first.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">Scroll to explore</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     REALITY CHECK — LIGHT
+══════════════════════════════════════ -->
+<section class="reality light reveal">
+  <div class="reality-inner">
+    <div>
+      <div class="label">The Reality</div>
+      <h2>
+        Your POS runs<br>your sales.<br>
+        <em>We run<br>your restaurant.</em>
+      </h2>
+      <p class="reality-intro"><strong>GetBackplate</strong> is a restaurant operations platform — built to manage everything your POS leaves behind.</p>
+    </div>
+    <div class="reality-right">
+      <p>Between the clipboards, the email threads, the WhatsApp groups, and the printed checklists — your restaurant runs on tools that were never built for how restaurants actually work.</p>
+      <p>Toast runs your transactions. Square processes your payments. But who runs your people? Your procedures? Your kitchen standards? Your training records? Your vendor relationships?</p>
+      <ul class="reality-list">
+        <li>Shift checklists on paper or never done at all</li>
+        <li>Employee onboarding through email chains</li>
+        <li>Scheduling in spreadsheets nobody keeps updated</li>
+        <li>SOPs stored in someone's personal Google Drive</li>
+        <li>Team communication across three different apps</li>
+        <li>Food safety logs nobody's checked since the last inspection</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     WHAT IS GETBACKPLATE — DARK
+══════════════════════════════════════ -->
+<section class="what-is dark reveal" id="platform">
+  <div class="what-is-glow"></div>
+  <div class="what-is-inner">
+    <div class="label">The Platform</div>
+    <h2>
+      One platform.<br>
+      Every system your restaurant<br>
+      has been running <em>without.</em>
+    </h2>
+    <div class="what-is-grid">
+      <div class="what-card">
+        <div class="what-num">01</div>
+        <div class="what-title">Operations & Compliance</div>
+        <div class="what-body">Digital checklists, opening and closing procedures, incident logs, food safety records, and equipment maintenance — all with sign-off and accountability tracking built in.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-num">02</div>
+        <div class="what-title">People & HR</div>
+        <div class="what-body">Onboarding, scheduling, time-off requests, training records, performance reviews, disciplinary logs, and digital contract signatures — your entire people layer, organized.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-num">03</div>
+        <div class="what-title">Kitchen & Menu</div>
+        <div class="what-body">Recipe archive with automatic portion scaling, menu costing tied directly to recipes, and a full supplier and vendor directory with order history and contacts.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-num">04</div>
+        <div class="what-title">Communication</div>
+        <div class="what-body">Platform notifications, SMS alerts, and WhatsApp messaging keep your team connected in real time — without the chaos of a third-party app nobody actually uses.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-num">05</div>
+        <div class="what-title">Marketing & Quality</div>
+        <div class="what-body">Manage your Google My Business listing, run in-platform review contests, and track mystery shopper evaluations with weighted scoring and trend reports.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-num">06</div>
+        <div class="what-title">Roles & Permissions</div>
+        <div class="what-body">Every module is controlled by a unified roles and permissions layer. Owners see everything. Managers see what they need. Staff see what's relevant to their shift.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     MULTI-LOCATION — CREAM BANNER
+══════════════════════════════════════ -->
+<div class="multiloc-banner reveal">
+  <div class="multiloc-inner">
+    <div class="multiloc-left">
+      <div class="label">Multi-Location</div>
+      <h2>All your locations.<br>One screen.<br><em>No tab switching.</em></h2>
+    </div>
+    <div class="multiloc-right">
+      <p>Most operators running multiple locations are logging into each one separately — different dashboards, different logins, different windows. GetBackplate gives you a unified view across every location. Checklists, staff, kitchen status, open incidents — all of it, side by side, in real time.</p>
+      <div class="multiloc-stats">
+        <div class="multiloc-stat">
+          <div class="multiloc-stat-num">one</div>
+          <div class="multiloc-stat-label">Login for all locations</div>
+        </div>
+        <div class="multiloc-stat">
+          <div class="multiloc-stat-num">zero</div>
+          <div class="multiloc-stat-label">Tab switching required</div>
+        </div>
+        <div class="multiloc-stat">
+          <div class="multiloc-stat-num">infinite</div>
+          <div class="multiloc-stat-label">Locations supported</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     NOT A POS — DARK BREAK
+══════════════════════════════════════ -->
+<div class="not-pos dark reveal">
+  <div class="not-pos-inner">
+    <div class="label center">What GetBackplate Is</div>
+    <h2>
+      A restaurant operations platform.<br>
+      <em>Not a POS. Not payroll.</em><br>
+      <span class="not-pos-plain">The layer that runs everything in between.</span>
+    </h2>
+    <p>Toast, Square, and Clover run your transactions. GetBackplate runs everything else — your people, your processes, your standards, your communication. We don't replace your POS. We complete it.</p>
+    <div class="not-pos-tags">
+      <span class="pos-tag is">✓ Restaurant Operations Platform</span>
+      <span class="pos-tag is">✓ People & HR Management</span>
+      <span class="pos-tag is">✓ Kitchen & Menu Systems</span>
+      <span class="pos-tag is">✓ Communication Tools</span>
+      <span class="pos-tag">× Not a POS</span>
+      <span class="pos-tag">× Not Payroll or Accounting</span>
+      <span class="pos-tag">× Not Ordering or Delivery</span>
+      <span class="pos-tag">× Not a Reservation System</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODULES — LIGHT
+══════════════════════════════════════ -->
+<section class="modules light reveal" id="modules">
+  <div class="modules-inner">
+    <div class="modules-header">
+      <div>
+        <div class="label">Platform Modules</div>
+        <h2>
+          Every system<br>
+          your restaurant<br>
+          has been running <em>without.</em>
+        </h2>
+      </div>
+      <p>GetBackplate is modular by design. Start with what you need, add modules as you grow. Every module shares a single unified permissions layer — no silos, no duplicate data, no confusion.</p>
+    </div>
+
+    <!-- Hero 6 modules -->
+    <div class="hero-modules">
+      <div class="hero-mod reveal">
+        <div class="hero-mod-num">01</div>
+        <div class="hero-mod-name">Roles & Permissions</div>
+        <div class="hero-mod-desc">User access control across every module. Define what owners, managers, and staff can see and do — the backbone everything else depends on.</div>
+      </div>
+      <div class="hero-mod reveal">
+        <div class="hero-mod-num">02</div>
+        <div class="hero-mod-name">File Management</div>
+        <div class="hero-mod-desc">Centralized document storage for menus, SOPs, certifications, and more. Organized by location, department, or role.</div>
+      </div>
+      <div class="hero-mod reveal">
+        <div class="hero-mod-num">03</div>
+        <div class="hero-mod-name">Checklists by Dept & Shift</div>
+        <div class="hero-mod-desc">Digital checklists per department and shift — with sign-off, accountability tracking, and manager visibility built in.</div>
+      </div>
+      <div class="hero-mod reveal">
+        <div class="hero-mod-num">04</div>
+        <div class="hero-mod-name">Platform Notifications</div>
+        <div class="hero-mod-desc">In-platform alerts keep your team informed in real time. No third-party apps, no missed updates.</div>
+      </div>
+      <div class="hero-mod reveal">
+        <div class="hero-mod-num">05</div>
+        <div class="hero-mod-name">Employee Onboarding</div>
+        <div class="hero-mod-desc">Every new hire — documents, training, and setup — in one place. No more email chains, shared drives, or printed packets.</div>
+      </div>
+      <div class="hero-mod reveal">
+        <div class="hero-mod-num">06</div>
+        <div class="hero-mod-name">Digital Contract Signatures</div>
+        <div class="hero-mod-desc">Send, sign, and archive employment contracts digitally. No per-document fees, no printing, no chasing signatures.</div>
+      </div>
+    </div>
+
+    <!-- Expand bar -->
+    <div class="mod-expand-bar" onclick="toggleModules(this)">
+      <div class="mod-expand-left">Plus <strong>17 more modules</strong> — SMS & WhatsApp Notifications, Task Assignment, Shift Communication Log, Supplier & Vendor Directory, Incident & Accident Log, Vacation & Time-Off Requests, Disciplinary Log, Equipment Maintenance Tracker, Recipe Archive + Portion Scaler, Temperature & Food Safety Log, Menu Costing, Schedule Builder, Performance Reviews, Google My Business Management, GMB Review Contests, Mystery Shopper.</div>
+      <div class="mod-expand-btn" id="mod-expand-btn">See all modules</div>
+    </div>
+
+    <!-- Extra modules grid -->
+    <div class="extra-modules" id="extra-modules-panel">
+      <div class="extra-mod"><div class="extra-mod-name">SMS & WhatsApp Notifications</div><div class="extra-mod-desc">Real-time team messaging that reaches staff beyond the platform.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Task Assignment</div><div class="extra-mod-desc">Assign tasks, set due dates, and require photo proof of completion. Integrated with checklists, maintenance, and shift communication so nothing falls through the cracks.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Shift Communication Log</div><div class="extra-mod-desc">End every shift with a handoff that actually works. Log open issues, low stock alerts, staff notes, and anything the next shift needs to know — before they walk in the door. No more finding out the fridge is broken at 6pm.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Supplier & Vendor Directory</div><div class="extra-mod-desc">Contacts, contracts, and order history organized in one place.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Incident & Accident Log</div><div class="extra-mod-desc">Track kitchen injuries, customer complaints, and equipment failures with full documentation.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Vacation & Time-Off Requests</div><div class="extra-mod-desc">Digital requests with manager approval flow. No more paper slips.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Disciplinary Log</div><div class="extra-mod-desc">Private manager-only record of warnings, incidents, and write-ups.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Equipment Maintenance Tracker</div><div class="extra-mod-desc">Service schedules, repair history, and vendor contacts per unit.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Recipe Archive + Portion Scaler</div><div class="extra-mod-desc">Store recipes with automatic portion scaling. Consistent output every time, across every location.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Temperature & Food Safety Log</div><div class="extra-mod-desc">HACCP-compliant fridge and freezer readings logged by shift. Ready for health inspections before they arrive.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Menu Costing</div><div class="extra-mod-desc">Food cost percentage calculated per dish — live, tied directly to your recipes, not a spreadsheet.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Schedule Builder</div><div class="extra-mod-desc">Weekly scheduling with role filters and availability management. Built for the way restaurant teams actually work.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Performance Reviews</div><div class="extra-mod-desc">Structured evaluations tied to roles, departments, and KPIs.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Google My Business Management</div><div class="extra-mod-desc">Manage your GMB listing and track guest feedback — all without leaving the platform.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">GMB Review Contests</div><div class="extra-mod-desc">Incentivize guests to leave reviews through in-platform campaigns.</div></div>
+      <div class="extra-mod"><div class="extra-mod-name">Mystery Shopper</div><div class="extra-mod-desc">Weighted scoring, visit logs, and trend reports over time.</div></div>
+      <div class="extra-mod extra-mod-text">
+        <div class="extra-mod-text-headline">One platform.</div>
+        <div class="extra-mod-text-body">Every system your operation has been running without.</div>
+      </div>
+      <div class="extra-mod extra-mod-text">
+        <div class="extra-mod-text-headline">23 modules.</div>
+        <div class="extra-mod-text-body">Start with what you need. Add more as you grow.</div>
+      </div>
+    </div>
+
+  </div>
+</section></section>
+
+<!-- ══════════════════════════════════════
+     TAGLINE BREAK — DARK
+══════════════════════════════════════ -->
+<div class="tagline-break dark reveal">
+  <div class="tagline-break-glow"></div>
+  <blockquote>
+    <em>"GetBackplate runs everything</em><br>
+    <strong>your POS ignores."</strong>
+  </blockquote>
+</div>
+
+<!-- ══════════════════════════════════════
+     TESTIMONIAL — LIGHT WARM
+══════════════════════════════════════ -->
+<section class="testimonial light-warm reveal">
+  <div class="testimonial-inner">
+    <div>
+      <div class="testi-badge">
+        <div class="testi-num">7</div>
+        <div class="testi-label">Restaurant<br>Locations<br>2 States</div>
+      </div>
+    </div>
+    <div class="testi-body">
+      <div class="testi-quote-mark">"</div>
+      <p class="testi-text">
+        We brought GetBackplate to our entire leadership team — owners, administrators, and managers across all our locations. By the end of the demo, everyone in that room understood exactly how much time, money, and chaos we've been leaving on the table. This is what we've been missing.
+      </p>
+      <div class="testi-author">
+        <div class="testi-line"></div>
+        <div>
+          <div class="testi-name">Restaurant Owner</div>
+          <div class="testi-role">Multi-Location Group · 7 Locations · 2 States</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FIRST TABLE — DARK
+══════════════════════════════════════ -->
+<section class="first-table dark reveal" id="first-table">
+  <div class="first-table-glow"></div>
+  <div class="first-table-inner">
+    <div class="first-table-left">
+      <div class="label">First Table Program</div>
+      <h2>
+        The First Table<br>
+        is reserved for<br>
+        the right <em>few.</em>
+      </h2>
+      <p>We're not opening GetBackplate to everyone at launch. We're opening it to a select group of restaurants that are serious about their operations. First Table Members get more than early access — they get a seat at the table where the platform gets built.</p>
+
+      <div class="ft-perks">
+        <div class="ft-perk">
+          <div class="ft-perk-icon">🔒</div>
+          <div>
+            <div class="ft-perk-title">Locked-In Pricing — Forever</div>
+            <div class="ft-perk-desc">The rate you join at is the rate you keep. No price increases. Ever.</div>
+          </div>
+        </div>
+        <div class="ft-perk">
+          <div class="ft-perk-icon">⚡</div>
+          <div>
+            <div class="ft-perk-title">Priority Access Before Public Launch</div>
+            <div class="ft-perk-desc">First Table Members go live before anyone else. No waiting in line.</div>
+          </div>
+        </div>
+        <div class="ft-perk">
+          <div class="ft-perk-icon">🤝</div>
+          <div>
+            <div class="ft-perk-title">Direct Line to the Team</div>
+            <div class="ft-perk-desc">A real person. Not a ticket. Your feedback shapes what gets built next.</div>
+          </div>
+        </div>
+        <div class="ft-perk">
+          <div class="ft-perk-icon">🏆</div>
+          <div>
+            <div class="ft-perk-title">First Table Member Badge</div>
+            <div class="ft-perk-desc">Permanently on your account. You were here first — and it shows.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="ft-counter">
+        <div class="ft-counter-label">Seats Remaining</div>
+        <div class="ft-counter-stat"><span>38</span> of 100</div>
+        <div class="ft-counter-bar-bg">
+          <div class="ft-counter-bar" style="width:62%"></div>
+        </div>
+        <div class="ft-counter-note">62 seats already reserved · Soft launch closes when full</div>
+      </div>
+
+      <div class="ft-form" id="waitlist-form">
+        <input type="email" id="waitlist-email" placeholder="your@restaurant.com">
+        <button type="button" class="ft-form-btn" id="waitlist-btn">Request My Seat</button>
+        <p class="ft-form-note">No spam. No mass emails. A real person will reach out.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     PRICING — LIGHT
+══════════════════════════════════════ -->
+<section class="pricing light reveal" id="pricing">
+  <div class="pricing-inner">
+    <div class="pricing-header">
+      <div class="label">Pricing</div>
+      <h2>Simple, honest pricing.</h2>
+      <p>Start with what you need. Add modules as you grow. No hidden fees, no surprise charges.</p>
+    </div>
+
+    <div class="billing-toggle">
+      <span class="billing-label active" id="label-monthly" onclick="setBilling('monthly')">Monthly</span>
+      <div class="toggle-track" id="toggle-track" onclick="toggleBilling()">
+        <div class="toggle-pill" id="toggle-pill"></div>
+      </div>
+      <span class="billing-label" id="label-annual" onclick="setBilling('annual')">Annual</span>
+      <span class="billing-save" id="billing-save">2 months free</span>
+    </div>
+
+    <div class="pricing-grid" id="pricing-grid">
+      <div class="price-card">
+        <div class="price-name">Starter</div>
+        <div class="price-amount price-monthly"><sup>$</sup>69</div>
+        <div class="price-amount price-annual"><sup>$</sup>58</div>
+        <div class="price-period price-monthly">per month</div>
+        <div class="price-period price-annual">per month, billed $696/yr</div>
+        <div class="price-save price-monthly">&nbsp;</div>
+        <div class="price-save price-annual">Save $132 per year</div>
+        <div class="price-setup">+ $299 one-time setup</div>
+        <ul class="price-features">
+          <li>1 location</li>
+          <li>Up to 15 users</li>
+          <li>5 GB storage <span class="storage-tip" data-tip="+10 GB blocks at $9/mo">?</span></li>
+          <li>Roles & Permissions</li>
+          <li>File Management</li>
+          <li>Checklists by Dept & Shift</li>
+          <li>Platform Notifications</li>
+          <li>Employee Onboarding</li>
+          <li>Digital Contract Signatures</li>
+        </ul>
+      </div>
+
+      <div class="price-card featured">
+        <div class="price-popular">Most Popular</div>
+        <div class="price-name">Growth</div>
+        <div class="price-amount price-monthly"><sup>$</sup>149</div>
+        <div class="price-amount price-annual"><sup>$</sup>124</div>
+        <div class="price-period price-monthly">per month</div>
+        <div class="price-period price-annual">per month, billed $1,488/yr</div>
+        <div class="price-save price-monthly">&nbsp;</div>
+        <div class="price-save price-annual">Save $300 per year</div>
+        <div class="price-setup">+ $499 one-time setup</div>
+        <ul class="price-features">
+          <li>Up to 3 locations</li>
+          <li>Up to 45 users</li>
+          <li>20 GB storage <span class="storage-tip" data-tip="+10 GB blocks at $9/mo">?</span></li>
+          <li>Everything in Starter</li>
+          <li>SMS & WhatsApp Notifications</li>
+          <li>Task Assignment</li>
+          <li>Shift Communication Log</li>
+          <li>Supplier & Vendor Directory</li>
+          <li>Incident & Accident Log</li>
+          <li>Vacation & Time-Off Requests</li>
+          <li>Disciplinary Log</li>
+          <li>Equipment Maintenance Tracker</li>
+        </ul>
+      </div>
+
+      <div class="price-card">
+        <div class="price-name">Pro</div>
+        <div class="price-amount price-monthly"><sup>$</sup>269</div>
+        <div class="price-amount price-annual"><sup>$</sup>224</div>
+        <div class="price-period price-monthly">per month</div>
+        <div class="price-period price-annual">per month, billed $2,688/yr</div>
+        <div class="price-save price-monthly">&nbsp;</div>
+        <div class="price-save price-annual">Save $540 per year</div>
+        <div class="price-setup">+ $699 one-time setup</div>
+        <ul class="price-features">
+          <li>Up to 10 locations</li>
+          <li>Up to 150 users</li>
+          <li>50 GB storage <span class="storage-tip" data-tip="+10 GB blocks at $9/mo">?</span></li>
+          <li>Everything in Growth</li>
+          <li>Recipe Archive + Portion Scaler</li>
+          <li>Temperature & Food Safety Log</li>
+          <li>Menu Costing</li>
+          <li>Schedule Builder</li>
+          <li>Performance Reviews</li>
+          <li>Training Tracker</li>
+          <li>Google My Business Management</li>
+          <li>GMB Review Contests</li>
+          <li>Mystery Shopper</li>
+        </ul>
+      </div>
+
+      <div class="price-card price-enterprise">
+        <div class="price-name">Enterprise</div>
+        <div class="price-amount">Custom</div>
+        <div class="price-period">tailored to your group</div>
+        <div class="price-setup">Custom setup & onboarding</div>
+        <ul class="price-features">
+          <li>Unlimited locations</li>
+          <li>Unlimited users</li>
+          <li>Custom storage <span class="storage-tip" data-tip="Storage negotiated per contract">?</span></li>
+          <li>Everything in Pro</li>
+          <li>White-label option</li>
+          <li>API access for integrations</li>
+          <li>Custom module development</li>
+          <li>Dedicated support contact</li>
+          <li>Data Processing Agreement</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="annual-note">
+      <strong>Pay annually, get 2 months free</strong> — save up to $458/year · All plans · Annual billing = 10 months charged
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     VALUES — DARK
+══════════════════════════════════════ -->
+<section class="values dark reveal">
+  <div class="values-glow"></div>
+  <div class="values-inner">
+    <div class="values-header">
+      <div>
+        <div class="label">Why We Exist</div>
+        <h2>
+          Because restaurants deserve<br>
+          one place where<br>
+          <em>everything works together.</em>
+        </h2>
+      </div>
+      <p>The restaurant industry runs on passion, hustle, and people — but it has always lacked the tools to match that energy. GetBackplate exists because no platform has ever truly understood what it feels like to work every role in a restaurant and still not have a system that brings it all together.</p>
+    </div>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-word">Fluidity</div>
+        <div class="value-body">Every interaction should feel natural. If it takes more than one click, we ask why. We do the hard work on our end so our clients don't have to on theirs.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-word">Empathy</div>
+        <div class="value-body">We've worked every shift. We build for the person still on the floor at midnight — who doesn't have time to learn new software or read a tutorial.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-word">Clarity</div>
+        <div class="value-body">Everything a user needs is visible on one screen. No buried menus, no confusion. A platform that explains itself the moment you open it.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-word">Accountability</div>
+        <div class="value-body">We help teams build a culture of ownership — by shift, by department, by person. Every action signed off. Every standard tracked.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-word">Ally Mentality</div>
+        <div class="value-body">We don't sell software. We become a partner in our client's success. Your growth is the only metric that matters to us.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-word">Simplicity</div>
+        <div class="value-body">Simple isn't easy to build. We carry the complexity so our clients never feel it. The promise: GetBackplate will never be complicated.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FOOTER — DARK
+══════════════════════════════════════ -->
+<footer class="dark">
+  <div class="footer-logo"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDExLjc5IDI0Mi41MyI+PHBhdGggZD0iTTk1OS40MiwyOS41NGgzMi45MnYxODMuNDVoLTMyLjkydi0zLjY2aDE1LjU5VjMzLjE5aC0xNS41OXYtMy42NloiIHN0eWxlPSJmaWxsOiNkNDUzMWE7Ii8+PHBhdGggZD0iTTEzMy40NSw2MS4xOWMzLjc3LDEuNjQsNy44OCw0LjA0LDEyLjM0LDcuMjEsMS4yOS45OSwyLjI4LDEuNDksMi45NywxLjQ5LDEuODgsMCwzLjEyLTMuMDIsMy43Mi05LjA3aDMuNDJjLS40LDYuNDUtLjYsMTcuODQtLjYsMzQuMmgtMy40MmMtLjg5LTUuMjUtMS44NC05LjU5LTIuODItMTMuMDEtLjk5LTMuNDItMi41My02LjQyLTQuNjEtOS0yLjg4LTMuNTctNi42Mi02LjM5LTExLjIzLTguNDctNC42MS0yLjA4LTkuNDQtMy4xMi0xNC41LTMuMTItNi41NCwwLTEyLjI5LDIuMTMtMTcuMjUsNi4zOS00Ljk2LDQuMjYtOC43NywxMC4zMy0xMS40NSwxOC4yMS0yLjY4LDcuODgtNC4wMSwxNy4wOC00LjAxLDI3LjU4LDAsMTcuODQsMi44NSwzMC45LDguNTUsMzkuMTgsNS43LDguMjgsMTQuNjUsMTIuNDEsMjYuODQsMTIuNDEsNS45NSwwLDExLjEtMS41NCwxNS40Ni00LjYxLDEuNzgtMS4xOSwyLjk1LTIuMzUsMy40OS0zLjQ5LjU0LTEuMTQuODItMi43LjgyLTQuNjh2LTE0LjI3YzAtNC4xNi0uNC03LjE5LTEuMTktOS4wNy0uNzktMS44OC0yLjE4LTMuMTctNC4xNi0zLjg3LTEuOTgtLjY5LTUuMi0xLjE0LTkuNjYtMS4zNHYtMi45N2M1LjE1LjMsMTIuMTQuNDUsMjAuOTYuNDUsNi43NCwwLDExLjg5LS4xNSwxNS40Ni0uNDV2Mi45N2MtMi4yOC4yLTMuOTQuNi00Ljk4LDEuMTktMS4wNC42LTEuNzQsMS43NC0yLjA4LDMuNDItLjM1LDEuNjktLjUyLDQuNDEtLjUyLDguMTh2MjkuNDRoLTIuOTdjLS4xLTEuOTgtLjUtMy44OS0xLjE5LTUuNzItLjY5LTEuODMtMS42NC0yLjc1LTIuODItMi43NS0uNTksMC0xLjE5LjE1LTEuNzguNDVzLTEuNjQuOTktMy4xMiwyLjA4Yy0zLjQ3LDIuNjgtNy4wNiw0LjY4LTEwLjc4LDYuMDItMy43MiwxLjM0LTcuODYsMi4wMS0xMi40MiwyLjAxLTEwLjIxLDAtMTguOTYtMi4xLTI2LjI0LTYuMzItNy4yOS00LjIxLTEyLjg2LTEwLjI4LTE2LjczLTE4LjIxLTMuODctNy45My01LjgtMTcuNC01LjgtMjguNHMyLjA2LTIxLjI0LDYuMTctMjkuODFjNC4xMS04LjU3LDkuNzktMTUuMTcsMTcuMDItMTkuNzcsNy4yMy00LjYxLDE1LjQ2LTYuOTEsMjQuNjgtNi45MSw1Ljg1LDAsMTAuNjUuODIsMTQuNDIsMi40NVoiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTIzNi40OSwxNDguMjVjLTEuNzgsNS40NS01LjEzLDEwLjE0LTEwLjA0LDE0LjA1LTQuOTEsMy45MS0xMC44Myw1Ljg3LTE3Ljc3LDUuODdzLTEzLjE0LTEuNjEtMTguMjktNC44M2MtNS4xNi0zLjIyLTkuMS03LjczLTExLjgyLTEzLjUzLTIuNzMtNS44LTQuMDktMTIuNTEtNC4wOS0yMC4xNSwwLTguNjIsMS4zOS0xNi4xMSw0LjE2LTIyLjQ1LDIuNzctNi4zNCw2LjY5LTExLjIzLDExLjc1LTE0LjY1LDUuMDYtMy40MiwxMC45NS01LjEzLDE3LjY5LTUuMTMsOC45MiwwLDE1Ljc4LDIuNywyMC41OSw4LjEsNC44MSw1LjQsNy4yMSwxMy42LDcuMjEsMjQuNjFoLTQ2LjU0Yy0uMywyLjc4LS40NSw1Ljk1LS40NSw5LjUyLDAsNi41NCwxLjA2LDEyLjI0LDMuMiwxNy4xLDIuMTMsNC44Niw0Ljk2LDguNiw4LjQ3LDExLjIzLDMuNTIsMi42Myw3LjIxLDMuOTQsMTEuMDgsMy45NCw0Ljc2LDAsOC45Ny0xLjE0LDEyLjY0LTMuNDIsMy42Ny0yLjI4LDYuNzQtNi4xLDkuMjItMTEuNDVsMi45NywxLjE5Wk0xOTUuNDUsOTcuMWMtMy4zNyw0LjU2LTUuNDUsMTEuMy02LjI1LDIwLjIyaDMyLjQxYy4yLTcuNzMtLjkyLTE0LjE3LTMuMzUtMTkuMzMtMi40My01LjE1LTYuMDItNy43My0xMC43OC03Ljczcy04LjY3LDIuMjgtMTIuMDQsNi44NFoiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTI3MS4xMyw4OS42N2gyMi4wMXYyLjk3aC0yMi4wMXY1Ny41NGMwLDQuNDYuODIsNy42OCwyLjQ1LDkuNjYsMS42NCwxLjk4LDMuOTksMi45Nyw3LjA2LDIuOTdzNS43LTEuMjQsNy44OC0zLjcyYzIuMTgtMi40OCw0LjAxLTYuNTQsNS41LTEyLjE5bDIuOTcuNzRjLTIuNDgsMTMuNjgtOC45MiwyMC41Mi0xOS4zMywyMC41Mi0zLjM3LDAtNi4xNS0uNC04LjMzLTEuMTktMi4xOC0uNzktNC4xMS0yLjAzLTUuOC0zLjcyLTIuMTgtMi4xOC0zLjY5LTQuODUtNC41My04LjAzLS44NC0zLjE3LTEuMjYtNy40My0xLjI2LTEyLjc5di00OS44MWgtMTQuMjd2LTIuOTdoMTQuMjd2LTIyLjc1YzUuNTUtLjIsMTAuMDEtLjg5LDEzLjM4LTIuMDh2MjQuODNaIiBzdHlsZT0iZmlsbDojZmZmOyIvPjxwYXRoIGQ9Ik0zNzQuNDYsMTE5LjkyYzQuNjYsNC44MSw2Ljk5LDEwLjU4LDYuOTksMTcuMzIsMCw1LjY1LTEuNDQsMTAuNjYtNC4zMSwxNS4wMi0yLjg4LDQuMzYtNi45OSw3Ljc2LTEyLjM0LDEwLjE5LTUuMzUsMi40My0xMS43LDMuNjQtMTkuMDMsMy42NC0yLjY4LDAtNC45Ni0uMDUtNi44NC0uMTUtNi4zNC0uMi0xMi41OS0uMy0xOC43My0uMy04LjEzLDAtMTQuMjcuMTUtMTguNDQuNDV2LTIuOTdjMy41Ny0uMiw2LjE3LS41OSw3LjgxLTEuMTlzMi43NS0xLjczLDMuMzUtMy40MmMuNTktMS42OC44OS00LjQxLjg5LTguMTh2LTczLjc1YzAtMy43Ny0uMy02LjQ5LS44OS04LjE4LS42LTEuNjgtMS43MS0yLjgyLTMuMzUtMy40Mi0xLjY0LS41OS00LjI0LS45OS03LjgxLTEuMTl2LTIuOTdjNC4xNi4zLDEwLjIxLjQ1LDE4LjE0LjQ1bDE2LjA2LS4xNWMxLjg4LS4xLDQuMDEtLjE1LDYuMzktLjE1LDEwLjExLDAsMTcuODcsMi4xMywyMy4yNyw2LjM5LDUuNCw0LjI2LDguMSw5LjkxLDguMSwxNi45NSwwLDUuNzUtMS44MSwxMC45LTUuNDMsMTUuNDYtMy42Miw0LjU2LTkuMzQsOC4wMy0xNy4xNywxMC40MXYuM2MxMC45LDEuNDksMTguNjgsNC42MywyMy4zNCw5LjQ0Wk0zMzEuNzIsNjQuODRjLTEuNTQuNjktMi42LDEuOTMtMy4yLDMuNzJzLS44OSw0LjQ2LS44OSw4LjAzdjMzLjZoOS45NmM4LjEzLDAsMTMuOC0yLjIsMTcuMDItNi42MiwzLjIyLTQuNDEsNC44My0xMC4yOCw0LjgzLTE3LjYycy0xLjY0LTEyLjk4LTQuOTEtMTYuNjVjLTMuMjctMy42Ny04LjU3LTUuNS0xNS45MS01LjUtMy4wNywwLTUuMzguMzUtNi45MSwxLjA0Wk0zNjYuNTgsMTM2LjY1YzAtNy44My0yLjExLTEzLjc4LTYuMzItMTcuODQtNC4yMS00LjA2LTEwLjkzLTYuMS0yMC4xNS02LjFoLTEyLjQ5djM3LjYyYzAsMy41Ny4zLDYuMi44OSw3Ljg4LjU5LDEuNjksMS42NiwyLjg1LDMuMiwzLjQ5LDEuNTQuNjUsMy44OS45Nyw3LjA2Ljk3LDE4LjUzLDAsMjcuOC04LjY3LDI3LjgtMjYuMDJaIiBzdHlsZT0iZmlsbDojZmZmOyIvPjxwYXRoIGQ9Ik0zOTguNDcsMTYyLjQ1Yy0zLjAyLTMuMTItNC41My03LjQ2LTQuNTMtMTMuMDEsMC00LjQ2LDEuMjEtOC4xMywzLjY0LTExLDIuNDMtMi44Nyw1LjMtNS4xNSw4LjYyLTYuODQsMy4zMi0xLjY4LDcuNzEtMy40NywxMy4xNi01LjM1LDUuNTUtMS44OCw5LjY2LTMuNjIsMTIuMzQtNS4yLDIuNjgtMS41OSw0LjAxLTMuNzIsNC4wMS02LjM5di05LjIyYzAtNS43NS0xLjIyLTkuNjktMy42NC0xMS44Mi0yLjQzLTIuMTMtNS44Mi0zLjItMTAuMTgtMy4yLTYuOTQsMC0xMS44NSwxLjc4LTE0LjcyLDUuMzUsMS45OC41LDMuNjQsMS41NCw0Ljk4LDMuMTIsMS4zNCwxLjU5LDIuMDEsMy41NywyLjAxLDUuOTVzLS43OSw0LjQ0LTIuMzgsNS44N2MtMS41OSwxLjQ0LTMuNjIsMi4xNi02LjEsMi4xNi0yLjc4LDAtNC44Ni0uODctNi4yNC0yLjYtMS4zOS0xLjczLTIuMDgtMy44NC0yLjA4LTYuMzJzLjU3LTQuMzYsMS43MS01Ljk1YzEuMTQtMS41OCwyLjg1LTMuMTcsNS4xMy00Ljc2LDIuMzgtMS42OCw1LjQtMy4wNyw5LjA3LTQuMTYsMy42Ny0xLjA5LDcuNjgtMS42NCwxMi4wNC0xLjY0LDcuNzMsMCwxMy41OCwxLjg0LDE3LjU0LDUuNSwyLjQ4LDIuMjgsNC4xNCw1LjAzLDQuOTgsOC4yNS44NCwzLjIyLDEuMjYsNy40NiwxLjI2LDEyLjcxdjQxLjMzYzAsMi40OC4zNSw0LjI2LDEuMDQsNS4zNS42OSwxLjA5LDEuODgsMS42NCwzLjU3LDEuNjQsMS4xOSwwLDIuMy0uMjcsMy4zNS0uODIsMS4wNC0uNTQsMi4xNi0xLjMxLDMuMzUtMi4zbDEuNjQsMi41M2MtMi41OCwxLjk4LTQuNzgsMy40LTYuNjIsNC4yNC0xLjg0Ljg0LTQuMTQsMS4yNi02LjkxLDEuMjYtNC43NiwwLTguMDgtMS4xOS05Ljk2LTMuNTctMS44OC0yLjM4LTIuODItNS42LTIuODItOS42Ni0yLjk3LDQuOTYtNi4zOSw4LjQtMTAuMjYsMTAuMzMtMy44NywxLjkzLTguMjMsMi45LTEzLjA4LDIuOS02LjI0LDAtMTAuODgtMS41Ni0xMy45LTQuNjhaTTQzNS43MiwxNDkuODh2LTI5LjE0Yy0uODksMS4zOS0yLjEzLDIuNTMtMy43MiwzLjQyLTEuNTkuODktNC4wMSwyLjA4LTcuMjksMy41Ny0zLjc3LDEuNTktNi44MiwzLjEtOS4xNCw0LjU0LTIuMzMsMS40NC00LjM0LDMuNC02LjAyLDUuODctMS42OSwyLjQ4LTIuNTMsNS42NS0yLjUzLDkuNTIsMCw0LjQ2LDEuMDksNy44MywzLjI3LDEwLjExLDIuMTgsMi4yOCw1LjA1LDMuNDIsOC42MiwzLjQyLDYuNTQsMCwxMi4xNC0zLjc3LDE2LjgtMTEuM1oiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTUyMC45MSw5Mi4yYzQuNjYsMy4wNyw2Ljk5LDYuODksNi45OSwxMS40NSwwLDIuNTgtLjc0LDQuNjEtMi4yMyw2LjEtMS40OSwxLjQ5LTMuMzcsMi4yMy01LjY1LDIuMjNzLTQuMjEtLjY3LTUuOC0yLjAxYy0xLjU5LTEuMzQtMi4zOC0zLjE1LTIuMzgtNS40MywwLTIuMDguNi0zLjg0LDEuNzktNS4yOCwxLjE5LTEuNDQsMi42OC0yLjQsNC40Ni0yLjktLjk5LTEuNzgtMi43NS0zLjI3LTUuMjgtNC40Ni0yLjUzLTEuMTktNS4yMy0xLjc4LTguMS0xLjc4LTMuNjcsMC03LjA5LDEuMTctMTAuMjYsMy40OS0zLjE3LDIuMzMtNS44LDYuMi03Ljg4LDExLjYtMi4wOCw1LjQtMy4xMiwxMi41Mi0zLjEyLDIxLjM0LDAsMTIuMjksMS45OCwyMS4yNCw1Ljk1LDI2Ljg0LDMuOTYsNS42LDkuMTIsOC40LDE1LjQ2LDguNCw0LjI2LDAsOC4zLTEuMjQsMTIuMTItMy43MiwzLjgxLTIuNDgsNi45Ni02LjM0LDkuNDQtMTEuNmwyLjgyLDEuMDRjLTEuNjksNS42NS00LjgzLDEwLjUxLTkuNDQsMTQuNTctNC42MSw0LjA2LTEwLjU4LDYuMS0xNy45Miw2LjEtNi4xNSwwLTExLjcyLTEuNTktMTYuNzMtNC43Ni01LjAxLTMuMTctOC45NS03Ljc1LTExLjgyLTEzLjc1LTIuODgtNi00LjMxLTEyLjk2LTQuMzEtMjAuODlzMS40Ni0xNS4xNyw0LjM5LTIxLjQxYzIuOTItNi4yNSw3LjAxLTExLjEzLDEyLjI3LTE0LjY1LDUuMjUtMy41MiwxMS4yNS01LjI4LDE3Ljk5LTUuMjhzMTIuMzksMS41OSwxNy4yNSw0Ljc2WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNNjA5LjgyLDE2MC43NGMxLjQ5LDEuMTksMy4yNywxLjkzLDUuMzUsMi4yM3YzLjEyYy01Ljk1LS40LTkuOTYtLjYtMTIuMDQtLjYtMi42OCwwLTguMTguMi0xNi41LjZ2LTMuMTJjMS4zOSwwLDIuNS0uMjcsMy4zNS0uODIuODQtLjU0LDEuMjYtMS4yMSwxLjI2LTIuMDFzLS4zLTEuNTQtLjg5LTIuMjNsLTE3LjEtMjQuOThjLTEuNjktMi40OC0zLjMtNC4xNC00LjgzLTQuOTgtMS41NC0uODQtMy42NC0xLjM2LTYuMzItMS41NnYyNS44N2MwLDQuMDcuNzIsNi44NywyLjE2LDguNCwxLjQ0LDEuNTQsMy45OSwyLjMsNy42NiwyLjN2My4xMmMtOC4zMy0uNC0xMy44My0uNi0xNi41LS42LTIuODgsMC04Ljg3LjItMTcuOTkuNnYtMy4xMmM0LjE2LDAsNy4wOS0uNzcsOC43Ny0yLjMsMS42OC0xLjU0LDIuNTMtNC4zNCwyLjUzLTguNHYtODQuOWMwLTQuNTYtLjg0LTcuODgtMi41My05Ljk2LTEuNjktMi4wOC00LjYxLTMuMTItOC43Ny0zLjEydi0zLjEyYzMuMTcuMyw2LjI0LjQ1LDkuMjIuNDUsNi4yNCwwLDExLjQtLjY5LDE1LjQ2LTIuMDh2NzMuNzVjMi44Ny0uMzksNS4yOC0xLjA2LDcuMjEtMi4wMSwxLjkzLS45NCwzLjc5LTIuMyw1LjU4LTQuMDlsMTEtMTEuNDVjMy4xNy0zLjI3LDQuNzYtNiw0Ljc2LTguMTgsMC0xLjY4LTEuMDItMi45NS0zLjA1LTMuNzktMi4wMy0uODQtNC42OC0xLjI2LTcuOTUtMS4yNnYtMi45N2M2Ljk0LjQsMTIuNTQuNiwxNi44LjYsNC42NiwwLDguOTctLjIsMTIuOTQtLjZ2Mi45N2MtNC44Ni40LTkuMzIsMi43My0xMy4zOCw2Ljk5bC0xOC4xNCwxOS4wMywyNi45MSwzNi43MmMxLjg4LDIuNDgsMy41Nyw0LjMxLDUuMDUsNS41WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNNjgyLjE1LDkxLjc1YzQuMjEsMi44OCw3LjUxLDcuMDksOS44OSwxMi42NCwyLjM4LDUuNTUsMy41NywxMi4xOSwzLjU3LDE5Ljkycy0xLjIyLDE0Ljc3LTMuNjQsMjEuNDFjLTIuNDMsNi42NC02LjIsMTIuMDQtMTEuMywxNi4yMS01LjExLDQuMTYtMTEuNDcsNi4yNS0xOS4xMSw2LjI1LTMuNzcsMC03LjE5LS43NC0xMC4yNi0yLjIzLTMuMDctMS40OS01LjQ1LTMuNDItNy4xNC01Ljh2MTkuMDNjMCw0LjA2LDEuMTksNi44NiwzLjU3LDguNCwyLjM4LDEuNTQsNS45NSwyLjMsMTAuNzEsMi4zdjMuMTJsLTMuNDItLjE1Yy05LjIyLS4zLTE1LjIyLS40NS0xNy45OS0uNDUtMi4zOCwwLTcuNzMuMi0xNi4wNi42di0zLjEyYzMuNjcsMCw2LjIyLS42Nyw3LjY2LTIuMDEsMS40NC0xLjM0LDIuMTYtMy43NCwyLjE2LTcuMjF2LTc0Ljk0YzAtNC41Ni0uODQtNy44OC0yLjUzLTkuOTYtMS42OS0yLjA4LTQuNjEtMy4xMi04Ljc3LTMuMTJ2LTMuMTJjMy4wNy4zLDYuMTQuNDUsOS4yMi40NSw2LjI1LDAsMTEuNC0uNjksMTUuNDYtMi4wOHYxNS43NmMyLjE4LTUuMTUsNS4zNS05LjE0LDkuNTItMTEuOTcsNC4xNi0yLjgyLDguOTItNC4yNCwxNC4yNy00LjI0czkuOTgsMS40NCwxNC4yLDQuMzFaTTY4MS4xOSwxMjYuMzljMC0yMi45OS01Ljc1LTM0LjQ5LTE3LjI1LTM0LjQ5LTQuNDYsMC04LjQ4LDEuNjEtMTIuMDQsNC44My0zLjU3LDMuMjItNi4xNSw3Ljg2LTcuNzMsMTMuOXY0NC42YzEuMzksMi44OCwzLjQyLDUuMTgsNi4xLDYuOTEsMi42OCwxLjczLDUuOSwyLjYsOS42NiwyLjYsMTQuMTcsMCwyMS4yNi0xMi43OSwyMS4yNi0zOC4zNloiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTczMC41NSwxNTIuMjZjMCw0LjA3Ljg0LDYuODcsMi41Myw4LjQsMS42OCwxLjU0LDQuNjEsMi4zLDguNzcsMi4zdjMuMTJjLTkuMTItLjQtMTUuMTItLjYtMTcuOTktLjZzLTguODcuMi0xNy45OS42di0zLjEyYzQuMTYsMCw3LjA5LS43Nyw4Ljc3LTIuMywxLjY4LTEuNTQsMi41My00LjM0LDIuNTMtOC40di04NC45YzAtNC41Ni0uODQtNy44OC0yLjUzLTkuOTYtMS42OS0yLjA4LTQuNjEtMy4xMi04Ljc3LTMuMTJ2LTMuMTJjMy4wNy4zLDYuMTUuNDUsOS4yMi40NSw2LjI1LDAsMTEuNC0uNjksMTUuNDYtMi4wOHYxMDIuNzRaIiBzdHlsZT0iZmlsbDojZmZmOyIvPjxwYXRoIGQ9Ik03NTUuNDUsMTYyLjQ1Yy0zLjAzLTMuMTItNC41NC03LjQ2LTQuNTQtMTMuMDEsMC00LjQ2LDEuMjEtOC4xMywzLjY0LTExLDIuNDMtMi44Nyw1LjMtNS4xNSw4LjYyLTYuODQsMy4zMi0xLjY4LDcuNzEtMy40NywxMy4xNi01LjM1LDUuNTUtMS44OCw5LjY2LTMuNjIsMTIuMzQtNS4yLDIuNjgtMS41OSw0LjAxLTMuNzIsNC4wMS02LjM5di05LjIyYzAtNS43NS0xLjIyLTkuNjktMy42NC0xMS44Mi0yLjQzLTIuMTMtNS44Mi0zLjItMTAuMTktMy4yLTYuOTQsMC0xMS44NSwxLjc4LTE0LjcyLDUuMzUsMS45OC41LDMuNjQsMS41NCw0Ljk4LDMuMTIsMS4zNCwxLjU5LDIuMDEsMy41NywyLjAxLDUuOTVzLS43OSw0LjQ0LTIuMzgsNS44N2MtMS41OSwxLjQ0LTMuNjIsMi4xNi02LjEsMi4xNi0yLjc4LDAtNC44Ni0uODctNi4yNS0yLjYtMS4zOS0xLjczLTIuMDgtMy44NC0yLjA4LTYuMzJzLjU3LTQuMzYsMS43MS01Ljk1YzEuMTQtMS41OCwyLjg1LTMuMTcsNS4xMy00Ljc2LDIuMzgtMS42OCw1LjQtMy4wNyw5LjA3LTQuMTYsMy42Ny0xLjA5LDcuNjgtMS42NCwxMi4wNC0xLjY0LDcuNzMsMCwxMy41OCwxLjg0LDE3LjU0LDUuNSwyLjQ4LDIuMjgsNC4xNCw1LjAzLDQuOTgsOC4yNS44NCwzLjIyLDEuMjYsNy40NiwxLjI2LDEyLjcxdjQxLjMzYzAsMi40OC4zNSw0LjI2LDEuMDQsNS4zNS42OSwxLjA5LDEuODgsMS42NCwzLjU3LDEuNjQsMS4xOSwwLDIuMy0uMjcsMy4zNS0uODIsMS4wNC0uNTQsMi4xNi0xLjMxLDMuMzUtMi4zbDEuNjQsMi41M2MtMi41OCwxLjk4LTQuNzgsMy40LTYuNjIsNC4yNC0xLjg0Ljg0LTQuMTQsMS4yNi02LjkxLDEuMjYtNC43NiwwLTguMDgtMS4xOS05Ljk2LTMuNTctMS44OC0yLjM4LTIuODItNS42LTIuODItOS42Ni0yLjk3LDQuOTYtNi4zOSw4LjQtMTAuMjYsMTAuMzMtMy44NywxLjkzLTguMjMsMi45LTEzLjA4LDIuOS02LjI1LDAtMTAuODgtMS41Ni0xMy45LTQuNjhaTTc5Mi43LDE0OS44OHYtMjkuMTRjLS44OSwxLjM5LTIuMTMsMi41My0zLjcyLDMuNDItMS41OS44OS00LjAxLDIuMDgtNy4yOSwzLjU3LTMuNzcsMS41OS02LjgyLDMuMS05LjE0LDQuNTQtMi4zMywxLjQ0LTQuMzQsMy40LTYuMDIsNS44Ny0xLjY5LDIuNDgtMi41Myw1LjY1LTIuNTMsOS41MiwwLDQuNDYsMS4wOSw3LjgzLDMuMjcsMTAuMTEsMi4xOCwyLjI4LDUuMDYsMy40Miw4LjYyLDMuNDIsNi41NCwwLDEyLjE0LTMuNzcsMTYuOC0xMS4zWiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNODQ3LjQxLDg5LjY3aDIydjIuOTdoLTIydjU3LjU0YzAsNC40Ni44Miw3LjY4LDIuNDUsOS42NiwxLjY0LDEuOTgsMy45OSwyLjk3LDcuMDYsMi45N3M1LjctMS4yNCw3Ljg4LTMuNzJjMi4xOC0yLjQ4LDQuMDEtNi41NCw1LjUtMTIuMTlsMi45Ny43NGMtMi40OCwxMy42OC04LjkyLDIwLjUyLTE5LjMzLDIwLjUyLTMuMzcsMC02LjE1LS40LTguMzMtMS4xOS0yLjE4LS43OS00LjExLTIuMDMtNS44LTMuNzItMi4xOC0yLjE4LTMuNjktNC44NS00LjU0LTguMDMtLjg0LTMuMTctMS4yNi03LjQzLTEuMjYtMTIuNzl2LTQ5LjgxaC0xNC4yN3YtMi45N2gxNC4yN3YtMjIuNzVjNS41NS0uMiwxMC4wMS0uODksMTMuMzgtMi4wOHYyNC44M1oiIHN0eWxlPSJmaWxsOiNmZmY7Ii8+PHBhdGggZD0iTTk0MC42NCwxNDguMjVjLTEuNzgsNS40NS01LjEzLDEwLjE0LTEwLjA0LDE0LjA1LTQuOTEsMy45MS0xMC44Myw1Ljg3LTE3Ljc3LDUuODdzLTEzLjE0LTEuNjEtMTguMjktNC44M2MtNS4xNi0zLjIyLTkuMS03LjczLTExLjgyLTEzLjUzLTIuNzMtNS44LTQuMDktMTIuNTEtNC4wOS0yMC4xNSwwLTguNjIsMS4zOS0xNi4xMSw0LjE2LTIyLjQ1LDIuNzctNi4zNCw2LjY5LTExLjIzLDExLjc1LTE0LjY1LDUuMDUtMy40MiwxMC45NS01LjEzLDE3LjY5LTUuMTMsOC45MiwwLDE1Ljc4LDIuNywyMC41OSw4LjEsNC44MSw1LjQsNy4yMSwxMy42LDcuMjEsMjQuNjFoLTQ2LjU0Yy0uMywyLjc4LS40NSw1Ljk1LS40NSw5LjUyLDAsNi41NCwxLjA2LDEyLjI0LDMuMiwxNy4xLDIuMTMsNC44Niw0Ljk2LDguNiw4LjQ4LDExLjIzLDMuNTIsMi42Myw3LjIxLDMuOTQsMTEuMDgsMy45NCw0Ljc2LDAsOC45Ny0xLjE0LDEyLjY0LTMuNDIsMy42Ny0yLjI4LDYuNzQtNi4xLDkuMjItMTEuNDVsMi45NywxLjE5Wk04OTkuNiw5Ny4xYy0zLjM3LDQuNTYtNS40NSwxMS4zLTYuMjQsMjAuMjJoMzIuNDFjLjItNy43My0uOTItMTQuMTctMy4zNS0xOS4zMy0yLjQzLTUuMTUtNi4wMi03LjczLTEwLjc4LTcuNzNzLTguNjcsMi4yOC0xMi4wNCw2Ljg0WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48cGF0aCBkPSJNNTIuMzYsMjEyLjk5SDE5LjQ1VjI5LjU0aDMyLjkydjMuNjZoLTE1LjU5djE3Ni4xNGgxNS41OXYzLjY2WiIgc3R5bGU9ImZpbGw6I2ZmZjsiLz48L3N2Zz4=" alt="GetBackplate" class="footer-logo-img"></div>
+  <div class="footer-center">
+    <div class="footer-tagline">"Run your restaurant. Not just your register."</div>
+    <div class="footer-url">GETBACKPLATE.COM · 2026</div>
+  </div>
+  <div class="footer-right">© 2026 GetBackplate. All rights reserved.<br>Site developed by <a href="https://marketingsolutions.formstack.com/forms/webform" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:underline;text-underline-offset:3px;">Marketing Solutions</a></div>
+</footer>
+
+<script>
+  // Billing toggle
+  let billingMode = 'monthly';
+  function setBilling(mode) {
+    billingMode = mode;
+    const grid = document.getElementById('pricing-grid');
+    const track = document.getElementById('toggle-track');
+    const labelM = document.getElementById('label-monthly');
+    const labelA = document.getElementById('label-annual');
+    const badge = document.getElementById('billing-save');
+    if (mode === 'annual') {
+      grid.classList.add('pricing-annual-mode');
+      track.classList.add('annual');
+      labelA.classList.add('active');
+      labelM.classList.remove('active');
+      badge.classList.add('visible');
+    } else {
+      grid.classList.remove('pricing-annual-mode');
+      track.classList.remove('annual');
+      labelM.classList.add('active');
+      labelA.classList.remove('active');
+      badge.classList.remove('visible');
+    }
+  }
+  function toggleBilling() {
+    setBilling(billingMode === 'monthly' ? 'annual' : 'monthly');
+  }
+
+  // Sticky nav on scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal, .reveal-left').forEach(el => observer.observe(el));
+
+  // Waitlist form
+  document.getElementById('waitlist-btn').addEventListener('click', function () {
+    const input = document.getElementById('waitlist-email');
+    const email = input.value.trim();
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      input.style.borderColor = 'rgba(212,83,26,0.6)';
+      input.style.background  = 'rgba(212,83,26,0.06)';
+      setTimeout(() => { input.style.borderColor = ''; input.style.background = ''; }, 1800);
+      return;
+    }
+    this.textContent = 'Seat Reserved ✓';
+    this.style.background = '#2A7A3B';
+    this.style.letterSpacing = '0.1em';
+    input.value = '';
+    input.placeholder = "We'll be in touch soon.";
+    input.disabled = true;
+    this.disabled = true;
+
+    // Update counter
+    const stat = document.querySelector('.ft-counter-stat');
+    if (stat) {
+      stat.innerHTML = '<span>37</span> of 100';
+      document.querySelector('.ft-counter-bar').style.width = '63%';
+      document.querySelector('.ft-counter-note').textContent = '63 seats already reserved · Soft launch closes when full';
+    }
+  });
+
+  function toggleModules(bar) {
+    const panel = document.getElementById('extra-modules-panel');
+    const btn = document.getElementById('mod-expand-btn');
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    btn.classList.toggle('open');
+    btn.textContent = isOpen ? 'See all modules' : 'Hide modules';
+  }
+</script>
+</body>
+</html>
