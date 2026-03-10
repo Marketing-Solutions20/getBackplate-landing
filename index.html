@@ -1028,7 +1028,7 @@
   /* Nav */
   nav { padding: 0 20px; }
   .nav-right .nav-link { display: none; }
-  .nav-cta { padding: 9px 16px; font-size: 10px; }
+  .nav-cta { display: none; }
 
   /* Hero */
   .hero { padding: 100px 20px 64px; gap: 40px; }
@@ -1406,6 +1406,7 @@
   padding: 20px 40px;
   border-top: 1px solid var(--border-dark);
 }
+.hero-countdown-mobile { display: none; }
 .hc-units {
   display: flex;
   align-items: flex-end;
@@ -1452,6 +1453,69 @@
   .hc-num { font-size: 40px; min-width: 50px; }
   .hc-sep { font-size: 32px; padding-bottom: 14px; }
 }
+
+/* ══════════════════════════════════════
+   RESPONSIVE FIXES — AI + COUNTDOWN + MISC
+══════════════════════════════════════ */
+@media (max-width: 1024px) {
+  /* Show mobile countdown, hide desktop one */
+  .hero-countdown-mobile { display: flex; }
+  .hero-right .hero-countdown { display: none; }
+
+  /* AI nav cards stay 3-col until 640 */
+  .ai-nav-cards { grid-template-columns: repeat(3, 1fr); }
+  .ai-panel { padding: 28px; }
+
+  /* Prevent mock chat overflow */
+  .ai-mock { overflow: hidden; }
+  .ai-mock-body { overflow-x: auto; }
+  .ai-bubble { word-break: break-word; }
+
+  /* Extra mod plan tag — reduce right offset on narrower cards */
+  .extra-mod-plan-tag { top: 12px; right: 12px; }
+}
+
+@media (max-width: 640px) {
+  /* Countdown mobile sizing */
+  .hero-countdown-mobile { padding: 18px 0; border-top: none; margin-top: 24px; }
+  .hero-countdown-mobile .hc-num { font-size: 44px; min-width: 52px; }
+  .hero-countdown-mobile .hc-sep { font-size: 32px; padding-bottom: 12px; }
+
+  /* AI nav cards stack vertically */
+  .ai-nav-cards { grid-template-columns: 1fr; }
+  .ai-nav-card { padding: 18px 20px; }
+  .ai-panel { padding: 20px; }
+
+  /* Chat bubbles: don't overflow */
+  .ai-bubble { font-size: 12px; max-width: 85%; }
+  .ai-bubble.user, .ai-bubble.ai { max-width: 80%; }
+  .ai-chat-row.right { flex-direction: row-reverse; }
+  .ai-tags { flex-wrap: wrap; }
+
+  /* Alert rows: stack badge below */
+  .ai-alert-row { flex-wrap: wrap; gap: 8px; }
+  .ai-alert-badge { margin-left: auto; }
+
+  /* Query input: wrap text */
+  .ai-query-input { flex-wrap: wrap; }
+  .ai-query-text { font-size: 12px; word-break: break-word; }
+
+  /* Plan tag on modules: reduce size */
+  .extra-mod-plan-tag { top: 10px; right: 10px; }
+  .extra-mod-plan-tag span { font-size: 8px; padding: 1px 5px; }
+
+  /* Pricing add-on */
+  .price-addon-inner { flex-direction: column; gap: 16px; }
+  .price-addon-cta { width: 100%; text-align: center; }
+}
+
+@media (max-width: 390px) {
+  .ai-nav-verb { font-size: 19px; }
+  .ai-nav-desc { font-size: 11px; }
+  .hero-countdown-mobile .hc-num { font-size: 36px; min-width: 44px; }
+  .hero-countdown-mobile .hc-sep { font-size: 28px; }
+}
+
 </style>
 </head>
 <body>
@@ -1487,6 +1551,17 @@
     <div class="hero-actions">
       <a href="#first-table" class="btn-primary">Request Your Seat</a>
       <a href="#modules" class="btn-ghost">See the modules</a>
+    </div>
+    <!-- Countdown shown on mobile only (hero-right hidden on ≤1024px) -->
+    <div class="hero-countdown hero-countdown-mobile">
+      <div class="hc-units">
+        <div class="hc-unit"><span class="hc-num" id="hc-days-m">—</span><span class="hc-label">days</span></div>
+        <div class="hc-sep">:</div>
+        <div class="hc-unit"><span class="hc-num" id="hc-hours-m">—</span><span class="hc-label">hours</span></div>
+        <div class="hc-sep">:</div>
+        <div class="hc-unit"><span class="hc-num" id="hc-mins-m">—</span><span class="hc-label">min</span></div>
+      </div>
+      <div class="hc-caption">Until soft launch · August 1, 2026</div>
     </div>
   </div>
 
@@ -2374,7 +2449,7 @@ function aiSwitch(btn, panel) {
   function tick() {
     const diff = target - Date.now();
     if (diff <= 0) {
-      document.querySelector('.hero-countdown').style.display = 'none';
+      document.querySelectorAll('.hero-countdown').forEach(el => el.style.display = 'none');
       return;
     }
     const d = Math.floor(diff / 86400000);
@@ -2383,6 +2458,10 @@ function aiSwitch(btn, panel) {
     document.getElementById('hc-days').textContent  = d;
     document.getElementById('hc-hours').textContent = pad(h);
     document.getElementById('hc-mins').textContent  = pad(m);
+    const dm = document.getElementById('hc-days-m');
+    if (dm) { dm.textContent = d;
+      document.getElementById('hc-hours-m').textContent = pad(h);
+      document.getElementById('hc-mins-m').textContent  = pad(m); }
   }
   tick();
   setInterval(tick, 30000);
